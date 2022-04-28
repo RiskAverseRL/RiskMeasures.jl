@@ -1,7 +1,7 @@
 RiskMeasures
 ============
 
-[![Build Status](https://github.com/RiskAverseRL/RiskMeasures/workflows/ci.yml/badge.svg)](https://github.com/RiskAverseRL/RiskMeasures/actions)
+[![Build Status](https://github.com/RiskAverseRL/RiskMeasures/workflows/CI/badge.svg)](https://github.com/RiskAverseRL/RiskMeasures/actions)
 
 Julia library for computing risk measures for random variables. The random variable represents profits or rewards that are to be maximized. The computed risk value is also better when greater.
 
