@@ -9,12 +9,12 @@ outcomes and distributed according to the measure `p` with risk level `α`. The 
 level `α` should be in [0,1].
 
 When `α = 0`, the function computes the expected value, and when `α = 1`, then the 
-function computes the essential infimum (a minimum value with positive probaiblity).
+function computes the essential infimum (a minimum value with positive probability).
 
 The function solves 
 ``\\sup_{β > 0} \\operatorname{erm}_β (X) + β^{-1} \\log (1-α)``.
-The value of `β` is upper bounded by `β_max`. Large values of `β` may cause the
-code to overflow
+The optimization over the value of `β` is upper bounded by `β_max`. Large
+values of `β_max` may cause the computation to overflow.
 
 Returns the evar and the value β that achieves the supremum above.
 
