@@ -9,7 +9,7 @@ on:
       - main
     #tags: '*'
 
-concurency:
+concurrency:
   # Skip intermediate builds: always.
   # Cancel intermediate builds: only if it is a pull request build.
   group: ${{ github.workflow }}-${{ github.ref }}
