@@ -1,12 +1,27 @@
 name: CI
+
 on:
-  - push
-  - pull_request
+  - pull_request:
+      branches:
+        - master
+  - push:
+      branches:
+        -master
+      tags: '*'
+
+concurency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+  
 jobs:
   test:
     name: Julia ${{ matrix.verion }} - ${{matrix.os }} - ${{ matrix.arch }} - ${{github.event_name }}
     runs-on: ${{ matrix.os }}
-    fail-fast: false
+    strategy:
+      fail-fast: false
     matrix:
       version:
         - 1.7
@@ -23,7 +38,6 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: actions/cache@v1
-    - uses: actions/cache@v1
         env:
           cache-name: cache-artifacts
         with:
