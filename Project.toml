@@ -1,0 +1,16 @@
+name = "RiskMeasures"
+uuid = "b5a8929a-7a15-4aed-937e-21e1a404cbc5"
+authors = ["Marek Petrik <mpetrik@cs.unh.edu> and contributors"]
+version = "0.1.0"
+
+[deps]
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
+
+[compat]
+julia = "1.8"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
