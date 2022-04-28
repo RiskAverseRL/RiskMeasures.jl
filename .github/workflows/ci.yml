@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - main
-    #tags: '*'
+    tags: '*'
 
 concurrency:
   # Skip intermediate builds: always.
@@ -22,15 +22,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
-    matrix:
-      version:
-        - 1.7
-      os:
-        - ubuntu-latest
-        #- macOS-latest
-        #- windows-latest
-      arch:
-        - x64
+      matrix:
+        version:
+          - 1.7
+        os:
+          - ubuntu-latest
+          #- macOS-latest
+          #- windows-latest
+        arch:
+          - x64
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
