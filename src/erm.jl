@@ -29,4 +29,4 @@ end
 erm(X::AbstractVector{<:Real}, p::AbstractVector{T}, α::Real) where {T<:Real} =
     erm(X, Distribution{T}(p), α)
 
-erm(X::AbstractVector{<:Real}, α::Real; β_max) = erm(X, uniform(length(X)), α)
+erm(X::AbstractVector{<:Real}, α::Real) = erm(X, uniform(length(X)), α)
