@@ -26,7 +26,10 @@ using RiskMeasures
 X = [1, 5, 6, 7, 20]
 p = [0.1, 0.1, 0.2, 0.5, 0.1]
 
-cvar(X, p, 0.1)
+var(X, p, 0.1)   # value at risk
+cvar(X, p, 0.1)  # conditional value at risk
+evar(X, p, 0.1)  # entropic value at risk
+erm(X, p, 0.1)   # entropic risk emasure
 ```
 
 ## See Also
