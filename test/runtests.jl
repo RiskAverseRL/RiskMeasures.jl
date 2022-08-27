@@ -2,17 +2,24 @@ using RiskMeasures
 using Test
 
 
-@testset "Entropic risk" begin
+@testset "ERM" begin
     X = [2. , 5. , 6. , 9. , 3., 1.]
     p = [.1 , .1 , .2 , .5 , .1, 0.]
-
+    
     @test isapprox(erm(X,p,0.), erm(X,p,1e-5); atol=1e-3)
     @test erm(X,p,0.) ≈ sum(X .* p)
     @test erm(X,p,0) ≥ erm(X,p,1) ≥ erm(X,p,2.)
     @test erm(X,p,Inf) ≈ 2.
+
+    # test translation invariance
+    @test erm(X .+ 100., p, 2.) ≈ erm(X, p, 2.) + 100.
+    @test erm(X .- 100., p, 2.) ≈ erm(X, p, 2.) - 100.
+    
+    @test erm(X .+ 300., p, 3.) ≈ erm(X, p, 3.) + 300.
+    @test erm(X .- 300., p, 3.) ≈ erm(X, p, 3.) - 300.
 end
 
-@testset "Entropic bounds" begin
+@testset "ERM bounds" begin
     X = [2. , 5. , 6. , 9. , 3., 1.]
     p = [.1 , .1 , .2 , .5 , .1, 0.]
     p2 = [.1 , .1 , .2 , .5 , .1]
@@ -20,6 +27,7 @@ end
     @test_throws ErrorException erm(X,p,-1.)
     @test_throws ErrorException erm(X,p2,2.)
 end
+
 
 @testset "VaR" begin
     p = [0.1, 0.2, 0.3, 0.1, 0.3, 0.0]

@@ -14,13 +14,13 @@ function erm(X::AbstractVector{<:Real}, p::Distribution{<:Real}, α::Real)
     length(X) > 0 || _bad_risk("X must have some elements")
     if iszero(α)
         sum(X .* p.p) |> float
-    elseif isinf(α)
+    elseif isinf(α) && α > zero(α)
         minimum(@inbounds X[i] for i ∈ 1:length(X) if !iszero(p.p[i])) |> float
     elseif zero(α) ≤ α 
         # because entropic risk measure is translation equivariant, we can change X so that
         # it is positive. That change makes it less likely that it overflows
-        Xmin = minimum(X)
-        - Xmin - one(α) / α * log(sum(p.p .* exp.(-α .* (X .+ Xmin) ))) |> float
+        Xmin = minimum(X) #  TODO: only needs to look at X with pos prob. `
+        Xmin - one(α) / α * log(sum(p.p .* exp.(-α .* (X .- Xmin) ))) |> float
     else
         _bad_risk("Risk level α must be non-negative.")
     end
