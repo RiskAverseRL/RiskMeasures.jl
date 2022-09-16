@@ -4,6 +4,8 @@ import Base
 Represents a discrete distribution over a finite set of outcomes 
 with non-negative values and sums to 1. The parameter `p` is copied 
 if it is not a vector and reused otherwise. 
+
+The default constructor ingests (does not copy) the parameter.
 """
 struct Distribution{T<:Real} 
     p :: Vector{T}
