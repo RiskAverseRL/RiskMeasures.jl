@@ -1,3 +1,19 @@
+
+"""
+    essinf(X,p)
+
+Computes the essential infimum of the random variable
+"""
+function essinf(X::AbstractVector{<:Real}, p::Distribution{T}) where {T<:Real}
+    minval = typemax(float(T)); minindex = -1
+    @inbounds for i ∈ eachindex(X, p.p)
+        (!iszero(p.p[i]) && X[i] < minval) &&
+            (minval = float(X[i]); minindex = i)
+    end
+    pc = zeros(T, length(p)); pc[minindex] = one(T)
+    (minval, Distribution{T}(pc))
+end
+
 """
     cvar(X, p::Distribution, α) 
 
@@ -25,17 +41,10 @@ function cvar(X::AbstractVector{T}, p::Distribution{T2}, α::Real) where
 
     # handle special cases
     if iszero(α)
-        return (cvar = (sum(X .* p.p) |> float),
-                p = p)
+        return (cvar = (sum(X .* p.p) |> float), p = p)
     elseif isone(α)
-        minval = typemax(float(T)); minindex = -1
-        @inbounds for i ∈ eachindex(X, p.p)
-            (!iszero(p.p[i]) && X[i] < minval) &&
-                (minval = float(X[i]); minindex = i)
-        end
-        pc = zeros(T2, length(p)); pc[minindex] = one(T2)
-        return (cvar = minval,
-                p = Distribution{T2}(pc))
+        v,np = essinf(X,p)
+        return (cvar = v, p = np)
     end
 
     # Now α ∈ (0,1)
@@ -55,7 +64,7 @@ function cvar(X::AbstractVector{T}, p::Distribution{T2}, α::Real) where
         p_left -= increment
         p_left ≤ zero(T2) && break 
     end
-    return (cvar=float(cvarv), p=pc)
+    return (cvar=float(cvarv), p=Distribution{T2}(pc))
 end
 
 

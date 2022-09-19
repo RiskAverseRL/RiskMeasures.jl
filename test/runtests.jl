@@ -1,7 +1,6 @@
 using RiskMeasures
 using Test
 
-
 @testset "ERM" begin
     X = [2. , 5. , 6. , 9. , 3., 1.]
     p = [.1 , .1 , .2 , .5 , .1, 0.]
@@ -19,13 +18,14 @@ using Test
     @test erm(X .- 300., p, 3.) ≈ erm(X, p, 3.) - 300.
 end
 
+
 @testset "ERM bounds" begin
     X = [2. , 5. , 6. , 9. , 3., 1.]
     p = [.1 , .1 , .2 , .5 , .1, 0.]
     p2 = [.1 , .1 , .2 , .5 , .1]
 
-    @test_throws ErrorException erm(X,p,-1.)
-    @test_throws ErrorException erm(X,p2,2.)
+    @test_throws ErrorException erm(X, p, -1.)
+    @test_throws ErrorException erm(X, p2, 2.)
 end
 
 
@@ -79,6 +79,35 @@ end
     @test cvar(X, p, 0.4).cvar ≈ 0
 end
 
+@testset "Risk measures order" begin
+    p = [0.1, 0.2, 0.3, 0.1, 0.3, 0.0]
+    X = [0, 5, 6, 2, -1, -10];
+
+    for α ∈ range(0.,1.,10)
+        @test all(p .≥ 0.)
+        @test minimum(X) ≤ evar(X, p, α; β_max = 60).evar 
+        @test evar(X, p, α; β_max = 60).evar ≤ cvar(X, p, α).cvar
+        @test cvar(X, p, α).cvar ≤ var(X, p, α).var
+        @test cvar(X, p, α).cvar ≤ mean(X, p)
+        @test var(X, p, α).var ≤ maximum(X)
+    end
+end
+
+@testset "Translation equivariance" begin
+    p = [0.05, 0.1, 0.1, 0.05, 0.2, 0.5]
+    X = [-4.7, 5.3, 1.6, 2.8, 10, -20];
+
+    e = ones(length(X))
+
+    for α ∈ range(0., 1., 5)
+        for c ∈ range(-10., 10., 6)
+            @test var(X .+ c .* e, p, α).var - c ≈ var(X, p, α).var
+            @test cvar(X .+ c .* e, p, α).cvar - c ≈ cvar(X, p, α).cvar
+            @test evar(X .+ c .* e, p, α).evar - c ≈ evar(X, p, α).evar
+        end
+    end
+end
+
 @testset "CVaR bounds" begin
     X = [2. , 5. , 6. , 9. , 3., 1.]
     p = [.1 , .1 , .2 , .5 , .1, 0.]
@@ -87,4 +116,27 @@ end
     @test_throws ErrorException cvar(X, p, -1) 
     @test_throws ErrorException cvar(X, p, 2) 
     @test_throws ErrorException cvar(X, p2, 0.5)
+end
+
+@testset "CVaR distribution matches" begin
+    X = collect(1.0:20.0)
+    p = collect(20.0:-1:1.0)
+    p .= p ./ sum(p)
+    for α ∈ [0., 0.2, 0.4, 0.6, 0.8, 1.0]
+        c = cvar(X, p, α)
+        @test c.cvar ≈ sum(c.p.p .* X)
+    end
+    
+end
+
+@testset "EVaR distribution matches" begin
+    X = collect(1.0:20.0)
+    p = collect(20.0:-1:1.0)
+    p .= p ./ sum(p)
+
+    for α ∈ [0., 0.2, 0.4, 0.6, 0.8, 1.0]
+        α = 0.3
+        c = evar(X, p, α)
+        @test c.evar ≈ sum(c.p.p .* X)
+    end
 end

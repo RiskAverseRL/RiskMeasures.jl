@@ -5,7 +5,7 @@ module RiskMeasures
 include("general.jl")
 
 include("distribution.jl")
-export Distribution, uniform
+export Distribution, uniform, mean
 
 include("var.jl")
 export var
