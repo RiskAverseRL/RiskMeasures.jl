@@ -24,7 +24,7 @@ function erm(X::AbstractVector{<:Real}, p::Distribution{<:Real}, α::Real, Xmin:
     length(X) == length(p) || _bad_distribution("Lengths of X and p must match.")
     length(X) > 0 || _bad_risk("X must have some elements")
     if iszero(α)
-        sum(X .* p.p) |> float
+        mean(X, p) |> float
     elseif isinf(α) && α > zero(α)
         minimum(@inbounds X[i] for i ∈ 1:length(X) if !iszero(p.p[i])) |> float
     elseif zero(α) ≤ α 
@@ -35,7 +35,7 @@ function erm(X::AbstractVector{<:Real}, p::Distribution{<:Real}, α::Real, Xmin:
             a = Iterators.map((x,p) -> (@fastmath p * exp(-α * (x - Xmin))), X, p.p) |> sum
             @fastmath Xmin - one(α) / α * log(a) |> float
         else
-            NaN
+            NaN |> float
         end
     else
         _bad_risk("Risk level α must be non-negative.")
@@ -76,7 +76,6 @@ function softmin(X::AbstractVector{<:Real}, p::Distribution{T}, α::Real, Xmin::
         if isfinite(Xmin) 
             np = similar(p.p)
             np .= @fastmath p.p .* exp.(-α .* (X .- Xmin) )
-            #np .= @fastmath max.(np, zero(T))
             np .= @fastmath inv(sum(np)) .* np
             mapreduce(isfinite, &, np) || error("Overflow, reduce α.")
             np

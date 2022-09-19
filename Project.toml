@@ -1,7 +1,7 @@
 name = "RiskMeasures"
 uuid = "b5a8929a-7a15-4aed-937e-21e1a404cbc5"
 authors = ["Marek Petrik <mpetrik@cs.unh.edu> and contributors"]
-version = "0.2"
+version = "0.2.1"
 
 [deps]
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"

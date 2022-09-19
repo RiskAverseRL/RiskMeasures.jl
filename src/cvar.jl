@@ -41,7 +41,7 @@ function cvar(X::AbstractVector{T}, p::Distribution{T2}, α::Real) where
 
     # handle special cases
     if iszero(α)
-        return (cvar = (sum(X .* p.p) |> float), p = p)
+        return (cvar = (mean(X, p.p) |> float), p = p)
     elseif isone(α)
         v,np = essinf(X,p)
         return (cvar = v, p = np)
