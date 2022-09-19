@@ -12,7 +12,9 @@ struct Distribution{T<:Real}
 
     function Distribution{T}(p::Vector{T}) where {T<:Real} 
         !isempty(p) || _bad_distribution("distribution must be non-empty.")
-        all(p .≥ zero(T)) || _bad_distribution("Probabilities must be non-negative.")
+        mapreduce(isfinite, &, p) || _bad_distribution("Probabilities must be finite.")
+        mapreduce(x->x≥zero(T), &, p) ||
+            _bad_distribution("Probabilities must be non-negative.")
         sum(p) ≈ one(T) || _bad_distribution("Probabilities must sum to 1.")
         new(p)
     end
@@ -38,3 +40,15 @@ uniform(n::Int) = uniform(n, Float64)
 function Base.length(p::Distribution{T}) where {T}
     return length(p.p)
 end
+
+function dot(X::Vector{<:Number}, p::Vector{<:Real})
+    s = zero(eltype(p))
+    # Consider LoopVectorization.jl
+    for i ∈ eachindex(X, p)
+        s += @fastmath X[i] * p[i]
+    end
+    s
+end
+
+mean(X, p::Distribution{<:Real}) = dot(X, p.p)
+mean(X, p) = dot(X,p)

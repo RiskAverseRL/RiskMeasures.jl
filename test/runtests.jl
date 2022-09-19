@@ -1,6 +1,4 @@
 using RiskMeasures
-using LinearAlgebra: dot
-using Statistics: mean
 using Test
 
 @testset "ERM" begin
@@ -26,8 +24,8 @@ end
     p = [.1 , .1 , .2 , .5 , .1, 0.]
     p2 = [.1 , .1 , .2 , .5 , .1]
 
-    @test_throws ErrorException erm(X,p,-1.)
-    @test_throws ErrorException erm(X,p2,2.)
+    @test_throws ErrorException erm(X, p, -1.)
+    @test_throws ErrorException erm(X, p2, 2.)
 end
 
 
@@ -85,17 +83,18 @@ end
     p = [0.1, 0.2, 0.3, 0.1, 0.3, 0.0]
     X = [0, 5, 6, 2, -1, -10];
 
-    for α ∈ 0.:0.1:1.0
-        @test minimum(X) ≤ evar(X,p,α).evar 
-        @test evar(X,p,α).evar ≤ cvar(X,p,α).cvar
-        @test cvar(X,p,α).cvar ≤ var(X,p,α).var
-        @test cvar(X,p,α).cvar ≤ mean(X)
-        @test var(X,p,α).var ≤ maximum(X)
+    for α ∈ range(0.,1.,10)
+        @test all(p .≥ 0.)
+        @test minimum(X) ≤ evar(X, p, α; β_max = 60).evar 
+        @test evar(X, p, α; β_max = 60).evar ≤ cvar(X, p, α).cvar
+        @test cvar(X, p, α).cvar ≤ var(X, p, α).var
+        @test cvar(X, p, α).cvar ≤ mean(X, p)
+        @test var(X, p, α).var ≤ maximum(X)
     end
 end
 
 @testset "Translation equivariance" begin
-    p = [0.05, 0.1, 0.1, 0.05, 0.1, 0.5]
+    p = [0.05, 0.1, 0.1, 0.05, 0.2, 0.5]
     X = [-4.7, 5.3, 1.6, 2.8, 10, -20];
 
     e = ones(length(X))
@@ -124,10 +123,8 @@ end
     p = collect(20.0:-1:1.0)
     p .= p ./ sum(p)
     for α ∈ [0., 0.2, 0.4, 0.6, 0.8, 1.0]
-        println(α)
         c = cvar(X, p, α)
-        println(c)
-        println(c.cvar ≈ dot(c.p.p, X))
+        @test c.cvar ≈ sum(c.p.p .* X)
     end
     
 end
@@ -137,11 +134,9 @@ end
     p = collect(20.0:-1:1.0)
     p .= p ./ sum(p)
 
-    #for α ∈ [0., 0.2, 0.4, 0.6, 0.8, 1.0]
-    α = 0.3
-    println(α)
-    c = evar(X, p, α)
-    println(c)
-    println(c.evar - dot(c.p.p, X))
-    #end
+    for α ∈ [0., 0.2, 0.4, 0.6, 0.8, 1.0]
+        α = 0.3
+        c = evar(X, p, α)
+        @test c.evar ≈ sum(c.p.p .* X)
+    end
 end

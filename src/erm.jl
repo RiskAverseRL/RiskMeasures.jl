@@ -16,6 +16,9 @@ More details: https://en.wikipedia.org/wiki/Entropic_risk_measure
 function erm end
 
 erm(X, p, α) = erm(X, p, α, minimum(X))
+erm(X::AbstractVector{<:Real}, p::AbstractVector{T}, α::Real) where {T<:Real} =
+    erm(X, Distribution{T}(p), α)
+erm(X::AbstractVector{<:Real}, α::Real) = erm(X, uniform(length(X)), α)
 
 function erm(X::AbstractVector{<:Real}, p::Distribution{<:Real}, α::Real, Xmin::Real)
     length(X) == length(p) || _bad_distribution("Lengths of X and p must match.")
@@ -29,7 +32,7 @@ function erm(X::AbstractVector{<:Real}, p::Distribution{<:Real}, α::Real, Xmin:
         # it is positive. That change makes it less likely that it overflows
         if isfinite(Xmin)
             #@fastmath Xmin-one(α) / α*log(sum(p.p .* exp.(-α .* (X .- Xmin) ))) |> float
-            a = Iterators.map((x,p) -> (@fastmath p * exp(α * (x - Xmin))), X, p.p) |> sum
+            a = Iterators.map((x,p) -> (@fastmath p * exp(-α * (x - Xmin))), X, p.p) |> sum
             @fastmath Xmin - one(α) / α * log(a) |> float
         else
             NaN
@@ -39,10 +42,6 @@ function erm(X::AbstractVector{<:Real}, p::Distribution{<:Real}, α::Real, Xmin:
     end
 end
 
-erm(X::AbstractVector{<:Real}, p::AbstractVector{T}, α::Real) where {T<:Real} =
-    erm(X, Distribution{T}(p), α)
-
-erm(X::AbstractVector{<:Real}, α::Real) = erm(X, uniform(length(X)), α)
 
 
 """
@@ -60,8 +59,13 @@ The risk level must satisfy α > 0
 function softmin end
 
 softmin(X, p, α) = softmin(X, p, α, minimum(X))
+softmin(X::AbstractVector{<:Real}, p::AbstractVector{T}, α::Real) where {T<:Real} =
+    softmin(X, Distribution{T}(p), α)
+softmin(X::AbstractVector{<:Real}, α::Real) = softmin(X, uniform(length(X)), α)
 
-function softmin(X::AbstractVector{<:Real}, p::Distribution{<:Real}, α::Real, Xmin::Real)
+function softmin(X::AbstractVector{<:Real}, p::Distribution{T}, α::Real, Xmin::Real) where
+    {T <: Real}
+    
     length(X) == length(p) || _bad_distribution("Lengths of X and p must match.")
     length(X) > 0 || _bad_risk("X must have some elements")
 
@@ -69,10 +73,13 @@ function softmin(X::AbstractVector{<:Real}, p::Distribution{<:Real}, α::Real, X
         #  TODO: only needs to look at X with pos prob.
         # because softmin is translation invariant add the subtract the smallest value
         # ensures that X ≥ 0
-        if isfinite(Xmin)
+        if isfinite(Xmin) 
             np = similar(p.p)
             np .= @fastmath p.p .* exp.(-α .* (X .- Xmin) )
+            #np .= @fastmath max.(np, zero(T))
             np .= @fastmath inv(sum(np)) .* np
+            mapreduce(isfinite, &, np) || error("Overflow, reduce α.")
+            np
         else
             error("Input must be finite.")
         end

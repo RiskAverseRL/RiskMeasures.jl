@@ -21,7 +21,8 @@ probability.
 Returns the evar and the value β that achieves the supremum above.
 
 See:
-Ahmadi-Javid, A. “Entropic Value-at-Risk: A New Coherent Risk Measure.” Journal of Optimization Theory and Applications 155(3), 2012.
+Ahmadi-Javid, A. “Entropic Value-at-Risk: A New Coherent Risk Measure.” Journal of
+Optimization Theory and Applications 155(3), 2012.
 """
 function evar(X::AbstractVector{<:Real}, p::Distribution{T}, α::Real;
               β_max = 100.) where {T <: Real}
@@ -29,15 +30,18 @@ function evar(X::AbstractVector{<:Real}, p::Distribution{T}, α::Real;
     length(X) > 0 || _bad_risk("X must have some elements")
 
     if iszero(α)
-        (evar = sum(X .* p.p) |> float, β=0., p = p)
+        (evar = mean(X, p.p) |> float, β=0., p = p)
     elseif isone(α)
         v,np = essinf(X,p)
         (evar = v, β = β_max, p = np)
     elseif zero(α) ≤ α ≤ one(α)
         Xmin = minimum(X)
+        # the function is minimized
         f(β) = -erm(X, p, β, Xmin) - (log(1-α) / β)
         sol = optimize(f, 0., β_max, Brent())
-        sol.converged || _bad_risk("Failed to find optimal β (unknown reason).")
+        sol.converged || error("Failed to find optimal β (unknown reason).")
+        isfinite(sol.minimum) ||
+            error("Overflow, computed an invalid solution. Reduce β_max.")
         β = float(sol.minimizer)
         # compute the robust representation solution from Donsker Varadhan
         (evar = -float(sol.minimum),

@@ -21,4 +21,3 @@ end
 (@benchmark RiskMeasures.erm($X, $p, 0.5)) |> display
 (@benchmark RiskMeasures.evar($X, $p, 0.5)) |> display
 (@benchmark RiskMeasures.cvar($X, $p, 0.5)) |> display
-
