@@ -15,10 +15,10 @@ More details: https://en.wikipedia.org/wiki/Entropic_risk_measure
 """
 function erm end
 
-erm(X, p, α) = erm(X, p, α, minimum(X))
-erm(X::AbstractVector{<:Real}, p::AbstractVector{T}, α::Real) where {T<:Real} =
-    erm(X, Distribution{T}(p), α)
 erm(X::AbstractVector{<:Real}, α::Real) = erm(X, uniform(length(X)), α)
+erm(X::AbstractVector{<:Real}, p, α) = erm(X, p, α, minimum(X))
+erm(X::AbstractVector{<:Real}, p::AbstractVector{T}, α::Real, Xmin::Real) where {T<:Real} =
+    erm(X, Distribution{T}(p), α, Xmin)
 
 function erm(X::AbstractVector{<:Real}, p::Distribution{<:Real}, α::Real, Xmin::Real)
     length(X) == length(p) || _bad_distribution("Lengths of X and p must match.")
