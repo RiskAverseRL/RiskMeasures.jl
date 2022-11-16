@@ -18,6 +18,11 @@ Returns the value var and an index `i` such that `X[i] = x` in the minimization 
 function var(X::AbstractVector{T}, p::Distribution{T2}, α::Real) where
              {T<:Real,T2<:Real}
 
+    # TODO: should be solving for
+    #``\\inf \\{x ∈ \\mathbb{R} : \\mathbb{P}[X ≤ x] > 1-α \\}
+    # with a strict inequality
+    
+
     length(X) == length(p) || _bad_distribution("Lengths of X and p must match.")
     zero(α) ≤ α ≤ one(α) || _bad_risk("Risk level α must be in [0,1].")
 

@@ -29,6 +29,9 @@ function evar(X::AbstractVector{<:Real}, p::Distribution{T}, α::Real;
     length(X) == length(p) || _bad_distribution("Lengths of X and p must match.")
     length(X) > 0 || _bad_risk("X must have some elements")
 
+    # TODO: This method minimizes the quasi-convex representation. Perhaps we should
+    # be working with the convex one!
+    
     if iszero(α)
         (evar = mean(X, p.p) |> float, β=0., p = p)
     elseif isone(α)
