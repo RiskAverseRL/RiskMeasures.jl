@@ -9,7 +9,7 @@ essential infimum (smallest value with positive probability) and `α=0` computes
 the essential supremum.
 
 Assumes a reward maximization setting and solves for
-``\\inf \\{x ∈ \\mathbb{R} : \\mathbb{P}[X ≤ x] ≥ 1-α \\}
+``\\inf \\{x ∈ \\mathbb{R} : \\mathbb{P}[X ≤ x] > 1-α \\}
 
 In general, this function is neither convex nor concave.
 
