@@ -95,7 +95,7 @@ end
 """
     softmintrue(X, p::Distribution, α [, Xmin])
 
-Compute a weighted appriximation of the min function for random variable `X` represented as 
+Compute a weighted approximation of the min function for random variable `X` represented as 
 a vector over outcomes and distributed according to the measure `p` with risk level `α`. 
 
 The operator computes a distribution p such that
