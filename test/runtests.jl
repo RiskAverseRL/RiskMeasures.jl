@@ -1,6 +1,9 @@
 using RiskMeasures
 using Test
 
+using Statistics: median
+using LinearAlgebra: ones
+
 @testset "ERM" begin
     X = [2. , 5. , 6. , 9. , 3., 1.]
     p = [.1 , .1 , .2 , .5 , .1, 0.]
@@ -36,7 +39,7 @@ end
     @test var(X, p, 0.99).var ≈ -1.0
     @test var(X, p, 0.).var ≈ 5.0
     @test var(X, p, 0.5).var ≈ 1.0
-    @test var(X, p, 0.4).var ≈ 1.0
+    @test var(X, p, 0.4).var ≈ 2.0
 
     p = [0.1, 0.2, 0.3, 0.1, 0.3]
     X = [4., 5., 1., 2., -1.]
@@ -45,7 +48,7 @@ end
     @test var(X, p, 0.99).var ≈ -1.0
     @test var(X, p, 0.0).var ≈ 5.0
     @test var(X, p, 0.5).var ≈ 1.0
-    @test var(X, p, 0.4).var ≈ 1.0
+    @test var(X, p, 0.4).var ≈ 2.0
 end
 
 @testset "VaR bounds" begin
@@ -56,6 +59,29 @@ end
     @test_throws ErrorException var(X, p, -1) 
     @test_throws ErrorException var(X, p, 2) 
     @test_throws ErrorException var(X, p2, 0.5)
+end
+
+@testset "VaR median" begin
+    # must find the median when it is unique
+    X = [2. , 5. , 6. , 9. , 3., 1., -1.]
+    p = ones(length(X)) / length(X)
+
+    @test var(X, p, 0.5).var ≈ median(X)
+    @test -var(-X, p, 0.5).var ≈ median(X)
+
+    # must be a bound on the media when it is not
+    X = [2. , 5. , 6. , 9. , 3., 1.]
+    p = ones(length(X)) / length(X)
+
+    @test var(X, p, 0.5).var ≥ median(X)
+    @test -var(-X, p, 0.5).var ≤ median(X)
+    
+    # just test a larger version
+    X = collect(-30:30)
+    p = ones(length(X)) / length(X)
+
+    @test var(X, p, 0.5).var ≈ median(X)
+    @test -var(-X, p, 0.5).var ≈ median(X)
 end
 
 @testset "CVaR" begin

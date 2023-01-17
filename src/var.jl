@@ -44,12 +44,13 @@ function var(X::AbstractVector{T}, p::Distribution{T2}, α::Real) where
     end
 
     # Efficiency note: sorting by X is O(n*log n); quickselect is O(n) and would suffice
-    sortedi = sort(eachindex(X, p.p); by=(i->@inbounds X[i]))
+    # descending sort (to make sure that VaR is optimistic as it should be)
+    sortedi = sort(eachindex(X, p.p); by=(i->@inbounds -X[i]))
 
     pos = last(sortedi) # this value is used when the loop does not break
     p_accum = zero(T2) 
-   
-    α̂ = one(α) - α
+
+    α̂ = α - 1e-10  # numerical issues
     # find the index such that the sum of the probabilities is greater than alpha
     @inbounds for i ∈ sortedi
         p_accum += p.p[i]
