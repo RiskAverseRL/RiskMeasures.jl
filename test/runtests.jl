@@ -1,6 +1,9 @@
 using RiskMeasures
 using Test
 
+using Statistics: median
+using LinearAlgebra: ones
+
 @testset "ERM" begin
     X = [2. , 5. , 6. , 9. , 3., 1.]
     p = [.1 , .1 , .2 , .5 , .1, 0.]
@@ -17,7 +20,6 @@ using Test
     @test erm(X .+ 300., p, 3.) ≈ erm(X, p, 3.) + 300.
     @test erm(X .- 300., p, 3.) ≈ erm(X, p, 3.) - 300.
 end
-
 
 @testset "ERM bounds" begin
     X = [2. , 5. , 6. , 9. , 3., 1.]
@@ -37,7 +39,7 @@ end
     @test var(X, p, 0.99).var ≈ -1.0
     @test var(X, p, 0.).var ≈ 5.0
     @test var(X, p, 0.5).var ≈ 1.0
-    @test var(X, p, 0.4).var ≈ 1.0
+    @test var(X, p, 0.4).var ≈ 2.0
 
     p = [0.1, 0.2, 0.3, 0.1, 0.3]
     X = [4., 5., 1., 2., -1.]
@@ -46,7 +48,7 @@ end
     @test var(X, p, 0.99).var ≈ -1.0
     @test var(X, p, 0.0).var ≈ 5.0
     @test var(X, p, 0.5).var ≈ 1.0
-    @test var(X, p, 0.4).var ≈ 1.0
+    @test var(X, p, 0.4).var ≈ 2.0
 end
 
 @testset "VaR bounds" begin
@@ -57,6 +59,29 @@ end
     @test_throws ErrorException var(X, p, -1) 
     @test_throws ErrorException var(X, p, 2) 
     @test_throws ErrorException var(X, p2, 0.5)
+end
+
+@testset "VaR median" begin
+    # must find the median when it is unique
+    X = [2. , 5. , 6. , 9. , 3., 1., -1.]
+    p = ones(length(X)) / length(X)
+
+    @test var(X, p, 0.5).var ≈ median(X)
+    @test -var(-X, p, 0.5).var ≈ median(X)
+
+    # must be a bound on the media when it is not
+    X = [2. , 5. , 6. , 9. , 3., 1.]
+    p = ones(length(X)) / length(X)
+
+    @test var(X, p, 0.5).var ≥ median(X)
+    @test -var(-X, p, 0.5).var ≤ median(X)
+    
+    # just test a larger version
+    X = collect(-30:30)
+    p = ones(length(X)) / length(X)
+
+    @test var(X, p, 0.5).var ≈ median(X)
+    @test -var(-X, p, 0.5).var ≈ median(X)
 end
 
 @testset "CVaR" begin
@@ -85,8 +110,8 @@ end
 
     for α ∈ range(0.,1.,10)
         @test all(p .≥ 0.)
-        @test minimum(X) ≤ evar(X, p, α; β_max = 60).evar 
-        @test evar(X, p, α; β_max = 60).evar ≤ cvar(X, p, α).cvar
+        @test minimum(X) ≤ evar(X, p, α; βmax = 60).evar 
+        @test evar(X, p, α; βmax = 60).evar ≤ cvar(X, p, α).cvar
         @test cvar(X, p, α).cvar ≤ var(X, p, α).var
         @test cvar(X, p, α).cvar ≤ mean(X, p)
         @test var(X, p, α).var ≤ maximum(X)
@@ -96,15 +121,25 @@ end
 @testset "Translation equivariance" begin
     p = [0.05, 0.1, 0.1, 0.05, 0.2, 0.5]
     X = [-4.7, 5.3, 1.6, 2.8, 10, -20];
-
     e = ones(length(X))
-
     for α ∈ range(0., 1., 5)
         for c ∈ range(-10., 10., 6)
             @test var(X .+ c .* e, p, α).var - c ≈ var(X, p, α).var
             @test cvar(X .+ c .* e, p, α).cvar - c ≈ cvar(X, p, α).cvar
             @test evar(X .+ c .* e, p, α).evar - c ≈ evar(X, p, α).evar
         end
+    end
+end
+
+@testset "EVaR reciprocal" begin
+    p = [0.05, 0.1, 0.1, 0.05, 0.2, 0.5]
+    X = [-4.7, 5.3, 1.6, 2.8, 10, -20];
+
+    for α ∈ range(0,1,length=10)
+        e1 = evar(X, p, α; reciprocal = false)
+        e2 = evar(X, p, α; reciprocal = true)
+        @test e1.evar ≈ e2.evar
+        @test e1.β ≈ e2.β
     end
 end
 
@@ -126,7 +161,6 @@ end
         c = cvar(X, p, α)
         @test c.cvar ≈ sum(c.p.p .* X)
     end
-    
 end
 
 @testset "EVaR distribution matches" begin

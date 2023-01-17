@@ -9,7 +9,7 @@ essential infimum (smallest value with positive probability) and `α=0` computes
 the essential supremum.
 
 Assumes a reward maximization setting and solves for
-``\\inf \\{x ∈ \\mathbb{R} : \\mathbb{P}[X ≤ x] ≥ 1-α \\}
+``\\inf \\{x ∈ \\mathbb{R} : \\mathbb{P}[X ≤ x] > 1-α \\}
 
 In general, this function is neither convex nor concave.
 
@@ -17,6 +17,11 @@ Returns the value var and an index `i` such that `X[i] = x` in the minimization 
 """
 function var(X::AbstractVector{T}, p::Distribution{T2}, α::Real) where
              {T<:Real,T2<:Real}
+
+    # TODO: should be solving for
+    #``\\inf \\{x ∈ \\mathbb{R} : \\mathbb{P}[X ≤ x] > 1-α \\}
+    # with a strict inequality
+    
 
     length(X) == length(p) || _bad_distribution("Lengths of X and p must match.")
     zero(α) ≤ α ≤ one(α) || _bad_risk("Risk level α must be in [0,1].")
@@ -39,12 +44,13 @@ function var(X::AbstractVector{T}, p::Distribution{T2}, α::Real) where
     end
 
     # Efficiency note: sorting by X is O(n*log n); quickselect is O(n) and would suffice
-    sortedi = sort(eachindex(X, p.p); by=(i->@inbounds X[i]))
+    # descending sort (to make sure that VaR is optimistic as it should be)
+    sortedi = sort(eachindex(X, p.p); by=(i->@inbounds -X[i]))
 
     pos = last(sortedi) # this value is used when the loop does not break
     p_accum = zero(T2) 
-   
-    α̂ = one(α) - α
+
+    α̂ = α - 1e-10  # numerical issues
     # find the index such that the sum of the probabilities is greater than alpha
     @inbounds for i ∈ sortedi
         p_accum += p.p[i]
