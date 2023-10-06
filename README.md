@@ -3,8 +3,11 @@ RiskMeasures
 
 [![Build Status](https://github.com/RiskAverseRL/RiskMeasures/workflows/CI/badge.svg)](https://github.com/RiskAverseRL/RiskMeasures/actions)
 
-Julia library for computing risk measures for random variables. The random variable represents profits or rewards that are to be maximized. The computed risk value is also better when greater.
+**Warning**: This is package is in development and the computed values should be treated with caution. 
 
+Julia library for computing risk measures for random variables. The random variable represents *profits* or *rewards* that are to be maximized. Also the computed risk value is preferable when it is greater.
+
+All risk measures get more conservative with an *increasing* risk level alpha.
 
 The following risk measures are currently supported
 
@@ -17,7 +20,6 @@ The focus is currently on random variables with categorical (discrete) probabili
 
 In general, the smaller value of the risk parameter indicates that the risk measure is less risk-averse or that it is closer to the expectation operator. 
 
-**Warning**: This is package is in development and the computed values should be treated with caution. 
 
 ## Examples
 
@@ -31,6 +33,13 @@ cvar(X, p, 0.1)  # conditional value at risk
 evar(X, p, 0.1)  # entropic value at risk
 erm(X, p, 0.1)   # entropic risk measure
 ```
+
+Please see the unit tests for examples of how this package can be used to compute the risk. 
+
+## Future development plans:
+
+- Integrate with Distributions.jl to support computing risk measures for parametric distributions
+- Add an optional intergration with Mosek's exponential cones to support computation of EVaR. 
 
 ## See Also
 
