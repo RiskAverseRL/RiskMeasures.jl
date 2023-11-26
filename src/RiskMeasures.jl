@@ -13,10 +13,11 @@ export var
 include("cvar.jl")
 export cvar
     
+include("evar.jl")
+export evar
+
 include("erm.jl")
 export erm
 
-include("evar.jl")
-export evar
 
 end

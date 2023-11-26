@@ -1,74 +1,73 @@
 
 """
-    essinf(X,p)
+    CVaR(x̃, α)
 
-Computes the essential infimum of the random variable
-"""
-function essinf(X::AbstractVector{<:Real}, p::Distribution{T}) where {T<:Real}
-    minval = typemax(float(T)); minindex = -1
-    @inbounds for i ∈ eachindex(X, p.p)
-        (!iszero(p.p[i]) && X[i] < minval) &&
-            (minval = float(X[i]); minindex = i)
-    end
-    pc = zeros(T, length(p)); pc[minindex] = one(T)
-    (minval, Distribution{T}(pc))
-end
+Compute the conditional value at risk at level `α` for the random variable `x̃` specified
+as a type of Distribution.
 
-"""
-    cvar(X, p::Distribution, α) 
-
-Compute the conditional value at risk at level `α` for the random variable `X` distributed 
-according the measure `p` in ``n \\log(n)`` time where `n = length(X)`. 
-
-Risk must satisfy ``α∈[0,1]`` and `α=0` computes expectation and `α=1` computes the 
-essential infimum (smallest value with positive probability).
+The risk level `α` must satisfy the ``α∈[0,1]``. Risk aversion increases with an increasing `α` and, `α=0` represents the expectation,  `α=1` computes the essential infimum (smallest value with positive probability).
 
 Assumes a reward maximization setting and solves the dual form
-``\\min_{q ∈ Q} q^T X``
+``\\min_{q ∈ Q} q^T x̃``
 where
 ``Q = {q ∈ Δ^n : q_i ≤ p_i/(1-α)}``
 and ``Δ^n`` is the probability simplex. 
 
-Returns a distribution `pc` that solves the optimization above and satisfies 
-that ``\\mathbb{E}_{X\\sim pc}{X}`` equals to the cvar value.
+Returns a named tuple with `value` and the `distribution` that solves the robust
+CVaR formulation such that ``\\mathbb{E}_{x̃\\sim pc}{x̃}`` equals to the CVaR value.
 
 More details: https://en.wikipedia.org/wiki/Expected_shortfall
 """
-function cvar(X::AbstractVector{T}, p::Distribution{T2}, α::Real) where
-             {T<:Real,T2<:Real}
-    length(X) == length(p) || _bad_distribution("Lengths of X and p must match.")
-    zero(α) ≤ α ≤ one(α) || _bad_risk("Risk level α must be in [0,1].")
+function CVaR end
+
+
+"""
+    CVaR(values, pmf, α; ...) 
+
+Compute CVaR for a discrete random variable with `values` and the probability mass
+function `pmf`. See `CVaR(x̃, α)` for more details.
+"""
+function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
+              check_inputs = true) 
+
+    if check_inputs
+        _check_α(α)
+        _check_pmf(values, pmf)
+    end
+
+    # ensure return type stability
+    Tval = float(eltype(values)) # construct the return type, which must be a float
+    Tdst = typeof(pmf)
 
     # handle special cases
     if iszero(α)
-        return (cvar = (mean(X, p.p) |> float), p = p)
+        return (value = dot(values, pmf) |> Tval :: Tval,
+                distribution = distribution ? pmf : empty(pmf) :: Tdst)
     elseif isone(α)
-        v,np = essinf(X,p)
-        return (cvar = v, p = np)
+        return essinf(xvalues, pmf; check_inputs = false, distribution = distribution)
     end
 
-    # Now α ∈ (0,1)
-    pc = zeros(T2, length(p))   # this is the new distribution
-    cvarv = zero(float(T))   # CVaR value
-    p_left = one(T2)         # probabilities left to allocate
-    α̂ = one(α) - α
+    # Here on: α ∈ (0,1)
+    pc = zeros(eltype(pmf), length(pmf))  # this is the new distribution
+    value = zero(Tval)                  # CVaR value
+    p_left = one(eltype(pmf))           # probabilities left for allocation
+    α̂ = one(α) - α                      # probabilities to allocate
 
-    # Efficiency note: sorting by X is O(n*log n); quickselect is O(n) and would suffice
-    sortedi = sort(eachindex(X, p.p); by=(i->@inbounds X[i]))
+    # Efficiency note: sorting by values is O(n*log n);
+    # quickselect is O(n) and would suffice but would need be based on quantile
+    sortedi = sort(eachindex(values, pmf); by=(i->@inbounds values[i]))
     @inbounds for i ∈ sortedi
         # update index's probability and probability left to sum to 1.0
-        increment = min(p.p[i] / α̂, p_left)
+        increment = min(pmf[i] / α̂, p_left)
         # update  return values
         pc[i] = increment
-        cvarv += increment * X[i]
+        value += increment * values[i]
         p_left -= increment
-        p_left ≤ zero(T2) && break 
+        p_left ≤ zero(p_left) && break 
     end
-    return (cvar=float(cvarv), p=Distribution{T2}(pc))
+    return (value = value |> Tval :: Tval,
+            dist = pc :: Tdst)
 end
 
+CVaR(x̃::Discrete, α::Real; kwargs...) = CVaR(support(x̃), probs(x̃), α; kwargs...)
 
-cvar(X::AbstractVector{<:Real}, p::AbstractVector{T}, α::Real) where {T<:Real} =
-    cvar(X, Distribution{T}(p), α)
-
-cvar(X::AbstractVector{<:Real}, α::Real) = cvar(X, uniform(length(X)), α)

@@ -51,4 +51,3 @@ function dot(X::Vector{<:Number}, p::Vector{<:Real})
 end
 
 mean(X, p::Distribution{<:Real}) = dot(X, p.p)
-mean(X, p) = dot(X,p)
