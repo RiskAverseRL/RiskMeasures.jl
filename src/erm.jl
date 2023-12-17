@@ -1,8 +1,7 @@
 """
-    ERM(x̃, p::Distribution, β [, x̃min])
+    ERM(x̃, β [, x̃min, check_inputs = true])
 
-Compute the entropic risk measure of the random variable `x̃` represented as 
-a vector over outcomes and distributed according to the measure `p` with risk level `β`. 
+Compute the entropic risk measure of the random variable `x̃` with risk level `β`. 
 
 The optional `x̃min` parameter is used as an offset in order to avoid overflows
 when computing the exponential function. If not provided, the minimum value
@@ -15,35 +14,31 @@ More details: https://en.wikipedia.org/wiki/Entropic_risk_measure
 """
 function ERM end
 
-ERM(x̃::AbstractVector{<:Real}, β::Real) = ERM(x̃, uniform(length(x̃)), β)
-ERM(x̃::AbstractVector{<:Real}, p, β) = ERM(x̃, p, β, minimum(x̃))
-ERM(x̃::AbstractVector{<:Real}, p::AbstractVector{T}, β::Real, x̃min::Real) where {T<:Real} =
-    ERM(x̃, Distribution{T}(p), β, x̃min)
+function ERM(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, β::Real;
+             x̃min::Real = -Inf, check_inputs = true)
+    
+    check_inputs && _check_pmf(values, pmf)
+    β < zero(β) && _bad_risk("Risk level β must be non-negative.")
 
-function ERM(x̃::AbstractVector{<:Real}, p::Distribution{<:Real}, β::Real, x̃min::Real)
-    length(x̃) == length(p) || _bad_distribution("Lengths of x̃ and p must match.")
-    length(x̃) > 0 || _bad_risk("x̃ must have some elements")
     if iszero(β)
-        mean(x̃, p) |> float
+        return dot(x̃, pmf) 
     elseif isinf(β) && β > zero(β)
-        minimum(@inbounds x̃[i] for i ∈ 1:length(x̃) if !iszero(p.p[i])) |> float
-    elseif zero(β) ≤ β 
-        # because entropic risk measure is translation equivariant, we can change x̃ so that
-        # it is positive. That change makes it less likely that it overflows
-        if isfinite(x̃min)
-            #@fastmath x̃min-one(β) / β*log(sum(p.p .* exp.(-β .* (x̃ .- x̃min) ))) |> float
-            a = Iterators.map((x,p) -> (@fastmath p * exp(-β * (x - x̃min))), x̃, p.p) |> sum
-            @fastmath x̃min - one(β) / β * log(a) |> float
-        else
-            NaN |> float
-        end
-    else
-        _bad_risk("Risk level β must be non-negative.")
-    end
+        return minimum(@inbounds x̃[i] for i ∈ 1:length(x̃) if !iszero(p.p[i])) |> float
+    end 
+    # because entropic risk measure is translation equivariant, we can change x̃ so that
+    # it is positive. That change makes it less likely that it overflows
+    x̃min = isfinite(x̃min) ? x̃min : minimum(values)
+    
+    #@fastmath x̃min-one(β) / β*log(sum(p.p .* exp.(-β .* (x̃ .- x̃min) ))) |> float
+    a = Iterators.map((x,p) -> (@fastmath p * exp(-β * (x - x̃min))), x̃, pmf) |> sum
+    @fastmath x̃min - one(β) / β * log(a) 
 end
 
+ERM(x̃::DiscreteNonParametric, β::Real; kwargs...)  =
+    ERM(support(x̃), probs(x̃), β; kwargs...)
+
 """
-    softmin(x̃, p::Distribution, β [, x̃min]; check_inputs = true)
+    softmin(x̃, p::Distribution, β; x̃min check_inputs = true)
 
 Compute a weighted softmin function for random variable `x̃` represented as 
 a vector over outcomes and distributed according to the measure `p` with risk level `β`. 
@@ -60,16 +55,10 @@ The value β must be positive
 """
 function softmin end
 
-softmin(x̃, p, β) = softmin(x̃, p, β, minimum(x̃))
-softmin(x̃::AbstractVector{<:Real}, p::AbstractVector{T}, β::Real) where {T<:Real} =
-    softmin(x̃, Distribution{T}(p), β)
-softmin(x̃::AbstractVector{<:Real}, β::Real) = softmin(x̃, uniform(length(x̃)), β)
-
-function softmin(x̃::AbstractVector{<:Real}, p::Distribution{T}, β::Real, x̃min::Real) where
-    {T <: Real}
+function softmin(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, β::Real;
+                 x̃min::Real) 
     
-    length(x̃) == length(p) || _bad_distribution("Lengths of x̃ and p must match.")
-    length(x̃) > 0 || _bad_risk("x̃ must have some elements")
+    check_inputs && _check_pmf(values, pmf)
 
     if β > zero(β)
         #  TODO: only needs to look at x̃ with pos prob.
@@ -88,3 +77,6 @@ function softmin(x̃::AbstractVector{<:Real}, p::Distribution{T}, β::Real, x̃m
         _bad_risk("Risk level β must be positive (>0).")
     end
 end
+
+softmin(x̃::DiscreteNonParametric, β::Real; kwargs...)  =
+    softmin(support(x̃), probs(x̃), β; kwargs...)

@@ -1,3 +1,6 @@
+using Distributions: DiscreteNonParametric
+
+
 _bad_risk(msg::AbstractString) =
     error(msg)
 _bad_distribution(msg::AbstractString) =

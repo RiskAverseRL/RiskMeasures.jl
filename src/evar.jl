@@ -1,7 +1,7 @@
 import Optim: optimize, Brent, BFGS
 
 """
-    EVaR(x̃, p::Distribution, α; βmin = 1e-5, βmax = 100, reciprocal = false, distribution = false)
+    EVaR(x̃, α; βmin = 1e-5, βmax = 100, reciprocal = false, distribution = false)
 
 Compute the EVaR risk measure of the random variable `x̃` represented as a vector over
 outcomes and distributed according to the measure `p` with risk level `α`. The risk
@@ -15,7 +15,7 @@ The function solves
 Large values of `βmax` may cause the computation to overflow.
 
 If `reciprocal = false`, then the quasi-concave problem above is solved directly.
-If `reciprocal = true`, then the optimization is reformulated in tERMs of `λ = 1/β`
+If `reciprocal = true`, then the optimization is reformulated in terms of `λ = 1/β`
 to get a concave function that can be solved (probably) more efficiently
 
 The function implicitly assumes that all elements of the probability space have non-zero
@@ -32,30 +32,34 @@ function EVaR end
 
 
 """
-    EVaR(values, pmf, α; ...)
+    EVaR_e(values, pmf, α; ...)
 
-Compute CVaR for a discrete random variable with `values` and the probability mass
-function `pmf`. See `CVaR(x̃, α)` for more details.
+Compute EVaR for a discrete random variable with `values` and the probability mass
+function `pmf`. See `EVaR(x̃, α)` for more details.
 """
-function EVaR(x̃::AbstractVector{<:Real}, p::AbstractArray{<:Real}, α::Real;
+function EVaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
               βmin = 1e-5, βmax = 100., reciprocal = false, check_inputs = true) 
 
-    if check_inputs
-        _check_α(α)
-        _check_pmf(values,pmf)
-    end
+    check_inputs && _check_α(α)
+    check_inputs && _check_pmf(values, pmf)
+
+    T = eltype(pmf) |> float
     
     if iszero(α)
-        return (EVaR = dot(values, pmf) |> float, β=0., p = p)
+        return (value = dot(values, pmf) |> float, β=0., pmf = pmf)
     elseif isone(α)
-        return essinf(values, pmf; check_inputs = false)
+        minval = essinf(xvalues, pmf; check_inputs = false)
+        minpmf = zeros(T, length(pmf))
+        minpmf[minval.index] = one(T)
+        return (value = minval.value, pmf = minpmf)
     end
 
     xmin = minimum(values)
     if !(reciprocal)
         # the function is minimized
         logconst = log(1-α)
-        f(β) = -ERM(values, p, β, xmin; check_inputs = false, distribution = false) - (logconst / β)
+        f(β) = -ERM(values, p, β, xmin; check_inputs = false) -
+            (logconst / β)
         sol = optimize(f, βmin, βmax, Brent())
         sol.converged || error("Failed to find optimal β (unknown reason).")
         isfinite(sol.minimum) ||
@@ -65,12 +69,14 @@ function EVaR(x̃::AbstractVector{<:Real}, p::AbstractArray{<:Real}, α::Real;
         return (value = -float(sol.minimum), β = β,
                 distribution = softmin(values, pmf, β, xmin)) 
     else
-        g(λ) = - (ERM(values, pmf, 1/λ, xmin; check_inputs = false, distribution = false) + λ*log(1-α))
+        g(λ) = - (ERM(values, pmf, 1/λ, xmin; check_inputs = false) +
+            λ*log(1-α))
         # this is the derivative, but it does not appear to be useful
         # df(λ) = - (λ * ERM(values, pmf, 1/λ; xmin) + softmin(, p, 1/λ; xmin))
         sol = optimize(g, inv(βmax), inv(βmin), Brent())
         sol.converged || error("Failed to find optimal λ (unknown reason).")
-        isfinite(sol.minimum) || error("Overflow, computed an invalid solution. Reduce βmax.")
+        isfinite(sol.minimum) ||
+            error("Overflow, computed an invalid solution. Reduce βmax.")
         β = 1. / float(sol.minimizer)
         # compute the robust representation solution from Donsker Varadhan
         return (value = -float(sol.minimum), β = β,
@@ -78,4 +84,6 @@ function EVaR(x̃::AbstractVector{<:Real}, p::AbstractArray{<:Real}, α::Real;
     end
 end
 
-EVaR(x̃::Discrete, α::Real; kwargs...) = EVaR(support(x̃), probs(x̃), α; kwargs...)
+
+EVaR(x̃::DiscreteNonParametric, α::Real; kwargs...) =
+    EVaR_e(support(x̃), probs(x̃), α; kwargs...).value

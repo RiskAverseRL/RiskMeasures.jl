@@ -5,7 +5,7 @@
 Compute the conditional value at risk at level `α` for the random variable `x̃` specified
 as a type of Distribution.
 
-The risk level `α` must satisfy the ``α∈[0,1]``. Risk aversion increases with an increasing `α` and, `α=0` represents the expectation,  `α=1` computes the essential infimum (smallest value with positive probability).
+The risk level `α` must satisfy the ``α ∈ [0,1]``. Risk aversion increases with an increasing `α` and, `α = 0` represents the expectation,  `α = 1` computes the essential infimum (smallest value with positive probability).
 
 Assumes a reward maximization setting and solves the dual form
 ``\\min_{q ∈ Q} q^T x̃``
@@ -22,35 +22,32 @@ function CVaR end
 
 
 """
-    CVaR(values, pmf, α; ...) 
+    CVaR_e(values, pmf, α; ...) 
 
 Compute CVaR for a discrete random variable with `values` and the probability mass
 function `pmf`. See `CVaR(x̃, α)` for more details.
 """
-function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
-              check_inputs = true) 
-
-    if check_inputs
-        _check_α(α)
-        _check_pmf(values, pmf)
-    end
-
-    # ensure return type stability
-    Tval = float(eltype(values)) # construct the return type, which must be a float
-    Tdst = typeof(pmf)
+function CVaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
+                check_inputs = true) 
+    _check_α(α)
+    check_inputs && _check_pmf(values, pmf)
 
     # handle special cases
     if iszero(α)
-        return (value = dot(values, pmf) |> Tval :: Tval,
-                distribution = distribution ? pmf : empty(pmf) :: Tdst)
+        return (value = dot(values, pmf), pmf = Vector(pmf))
     elseif isone(α)
-        return essinf(xvalues, pmf; check_inputs = false, distribution = distribution)
+        minval = essinf(xvalues, pmf; check_inputs = false)
+        minpmf = zeros(Tdst, length(pmf))
+        minpmf[minval.index] = one(T)
+        return (value = minval.value, pmf = minpmf)
     end
 
+    T = eltype(pmf)
+    
     # Here on: α ∈ (0,1)
-    pc = zeros(eltype(pmf), length(pmf))  # this is the new distribution
-    value = zero(Tval)                  # CVaR value
-    p_left = one(eltype(pmf))           # probabilities left for allocation
+    pc = zeros(T, length(pmf))  # this is the new distribution
+    value = zero(T)                  # CVaR value
+    p_left = one(T)           # probabilities left for allocation
     α̂ = one(α) - α                      # probabilities to allocate
 
     # Efficiency note: sorting by values is O(n*log n);
@@ -65,9 +62,8 @@ function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
         p_left -= increment
         p_left ≤ zero(p_left) && break 
     end
-    return (value = value |> Tval :: Tval,
-            dist = pc :: Tdst)
+    return (value = value, pmf = pc)
 end
 
-CVaR(x̃::Discrete, α::Real; kwargs...) = CVaR(support(x̃), probs(x̃), α; kwargs...)
-
+CVaR(x̃::DiscreteNonParametric, α::Real; kwargs...) :: Real =
+    CVaR_e(support(x̃), probs(x̃), α; kwargs...).value
