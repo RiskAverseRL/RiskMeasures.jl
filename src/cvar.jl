@@ -8,13 +8,15 @@ Compute the conditional value at risk at level `α` for the random variable `x̃
 The risk level `α` must satisfy the ``α ∈ [0,1]``. Risk aversion increases with an increasing `α` and, `α = 0` represents the expectation,  `α = 1` computes the essential infimum (smallest value with positive probability).
 
 Assumes a reward maximization setting and solves the dual form
-``\\min_{q ∈ Q} q^T x̃``
+```math
+\\min_{q ∈ \\mathcal{Q}} q^T x̃
+```
 where
-``Q = {q ∈ Δ^n : q_i ≤ p_i/(1-α)}``
-and ``Δ^n`` is the probability simplex. 
+```math
+\\mathcal{Q} = \\left\\{q ∈ Δ^n : q_i ≤ \\frac{p_i}{1-α}\\right\\}
+```
+and ``Δ^n`` is the probability simplex, and ``p`` is the distribution of ``x̃``. 
 
-Returns a named tuple with `value` and the `distribution` that solves the robust
-CVaR formulation such that ``\\mathbb{E}_{x̃\\sim pc}{x̃}`` equals to the CVaR value.
 
 More details: https://en.wikipedia.org/wiki/Expected_shortfall
 """
@@ -25,6 +27,10 @@ function CVaR end
 
 Compute the conditional value at risk at level `α` for the random variable `x̃`. Also
 compute the equivalent random variable with the same support but a different distribution.
+
+Returns a named tuple with `value` and the `solution` random variable that solves the robust
+CVaR formulation. That is if `ỹ` is the solution, then the support of `x̃` and `ỹ` are the same
+and  ``\\mathbb{E}[ỹ] = \\operatorname{CVaR}_{α}[x̃]``.
 """
 function CVaR_e end
 

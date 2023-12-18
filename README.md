@@ -40,7 +40,6 @@ We can also compute risk measures of transformed random variables
 ```Julia
 VaR(5*x̃ + 10, 0.1)   # value at risk
 CVaR(x̃ - 10, 0.1)  # conditional value at risk
-
 ```
 
 Extended methods `VaR_e`, `CVaR_e`, and `EVaR_e` also return additional statistics and values, such as the distribution that attains the risk value and the optimal `β` in EVaR.

@@ -1,7 +1,8 @@
 """
     essinf(x̃; distribution = false)
 
-Compute the essential infimum of the random variable `x̃`. 
+Compute the essential infimum of the random variable `x̃`, which is the minimum
+value with positive probability
 """
 function essinf end
 
@@ -11,7 +12,7 @@ function essinf end
 Compute the value for a random variable with `values` and the probability mass
 function `pmf`.
 
-See `essinf(x̃)` for more details.
+See `essinf_e(x̃)` for more details.
 """
 function essinf_e(values::AbstractVector{Tval}, pmf::AbstractVector{<:Real};
                   check_inputs = true) :: @NamedTuple{value::Tval, index::Int} where

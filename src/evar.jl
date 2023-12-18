@@ -9,8 +9,11 @@ Compute the EVaR risk measure of the random variable `x̃` with risk level `α` 
 When `α = 0`, the function computes the expected value, and when `α = 1`, then the 
 function computes the essential infimum (a minimum value with positive probability).
 
-The function solves 
-``\\max_{β ∈ [βmin, βmax]} \\operatorname{ERM}_β (x̃) - β^{-1} \\log (1/(1-α))``.
+The function solves
+```math
+\\max_{β ∈ [βmin, βmax]} \\operatorname{ERM}_β (x̃) - β^{-1} \\log (1/(1-α)).
+```
+
 Large values of `βmax` may cause the computation to overflow.
 
 If `reciprocal = false`, then the quasi-concave problem above is solved directly.
