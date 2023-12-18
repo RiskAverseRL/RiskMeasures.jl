@@ -76,10 +76,11 @@ end
 
 # Definition for DiscreteNonparametric
 CVaR(x̃, α::Real; kwargs...) =
-    CVaR_e(support(x̃), probs(x̃), α; kwargs...).value
+    CVaR_e(rv2pmf(x̃)..., α; kwargs...).value
 
 function CVaR_e(x̃, α::Real; kwargs...)
-    v1 = CVaR_e(support(x̃), probs(x̃), α; kwargs...)
-    ỹ = DiscreteNonParametric(support(x̃), v1.pmf)
+    supp, pmf = rv2pmf(x̃)
+    v1 = CVaR_e(supp, pmf, α; kwargs...)
+    ỹ = DiscreteNonParametric(supp, v1.pmf)
     (value = v1.value, solution = ỹ)
 end

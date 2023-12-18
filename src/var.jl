@@ -62,14 +62,21 @@ end
 
 
 VaR(x̃, α::Real; kwargs...) =
-    VaR_e(support(x̃), probs(x̃), α; kwargs...).value
+    VaR_e(rv2pmf(x̃)..., α; kwargs...).value
 
 function VaR_e(x̃, α::Real; kwargs...)
-    pmf = support(x̃)
-    v1 = VaR_e(pmf, probs(x̃), α; kwargs...)
-    T = eltype(pmf)
-    vpmf = zeros(T, length(pmf))
-    vpmf[v1.index] = 1.0
-    ỹ = DiscreteNonParametric(support(x̃), vpmf)
+    supp, pmf = rv2pmf(x̃)
+    v1 = VaR_e(supp, pmf, α; kwargs...)
+    # construct the equivalent distribution
+    Tp = eltype(pmf)
+    Ts = eltype(supp)
+    if v1.index > 0
+        vpmf = zeros(Tp, length(pmf))
+        vpmf[v1.index] = one(Tp)
+        ỹ = DiscreteNonParametric(supp, vpmf)
+    else # happens then VaR is infinite
+        ỹ = DiscreteNonParametric([typemax(Ts)],[one(Tp)])
+    end                                 
+    
     (value = v1.value, solution = ỹ)
 end

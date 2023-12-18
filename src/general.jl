@@ -1,4 +1,4 @@
-using Distributions: DiscreteNonParametric
+using Distributions: DiscreteNonParametric, DiscreteAffineDistribution
 
 
 _bad_risk(msg::AbstractString) =
@@ -25,4 +25,21 @@ end
 
 function _check_α(α::Real)
     zero(α) ≤ α ≤ one(α) || _bad_risk("Risk level α must be in [0,1].")
+end
+
+# converts a random variable to a support and a probability mass function
+function rv2pmf(x̃::DiscreteNonParametric)
+    sp = support(x̃)
+    (sp, pdf.(x̃, sp))
+end
+
+function rv2pmf(x̃::DiscreteAffineDistribution)
+    # needs to handle location-scale separately because
+    # the implementation of the pdf function in Distributions.LocationScale
+    # leads to numerrical errors
+    
+    sp = support(x̃.ρ)
+    pmf = pdf.(x̃.ρ, sp)
+    sp = @. sp * x̃.σ + x̃.μ
+    (sp, pmf)
 end

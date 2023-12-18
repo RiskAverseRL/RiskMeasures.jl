@@ -83,10 +83,11 @@ function EVaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α:
 end
 
 
-EVaR(x̃, α::Real; kwargs...) = EVaR_e(support(x̃), probs(x̃), α; kwargs...).value
+EVaR(x̃, α::Real; kwargs...) = EVaR_e(rv2pmf(x̃)..., α; kwargs...).value
 
 function EVaR_e(x̃, α::Real; kwargs...)
-    v1 = EVaR_e(support(x̃), probs(x̃), α; kwargs...)
-    ỹ = DiscreteNonParametric(support(x̃), v1.pmf)
-    (value = v1.value, solution = ỹ)
+    supp, pmf = rv2pmf(x̃)
+    v1 = EVaR_e(supp, pmf, α; kwargs...)
+    ỹ = DiscreteNonParametric(supp, v1.pmf)
+    (value = v1.value, solution = ỹ, β = v1.β)
 end

@@ -9,13 +9,13 @@ include("erm.jl")
 export ERM
 
 include("var.jl")
-export VaR
+export VaR, VaR_e
 
 include("cvar.jl")
-export CVaR
+export CVaR, CVaR_e
     
 include("evar.jl")
-export EVaR
+export EVaR, EVaR_e
 
 
 end

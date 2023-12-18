@@ -36,7 +36,7 @@ function ERM(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, β::Re
     @fastmath x̃min - one(β) / β * log(a) 
 end
 
-ERM(x̃, β::Real; kwargs...) = ERM(support(x̃), probs(x̃), β; kwargs...)
+ERM(x̃, β::Real; kwargs...) = ERM(rv2pmf(x̃)..., β; kwargs...)
 
 """
     softmin(x̃, β; x̃min check_inputs = true)
@@ -55,8 +55,8 @@ The value β must be positive
 """
 function softmin end
 
-function softmin(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, β::Real;
-                 x̃min::Real = -Inf, check_inputs = true) 
+function softmin(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real},
+                 β::Real; x̃min::Real = -Inf, check_inputs = true) 
     
     check_inputs && _check_pmf(values, pmf)
 
@@ -78,4 +78,4 @@ function softmin(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, β
     end
 end
 
-softmin(x̃, β::Real; kwargs...) = softmin(support(x̃), probs(x̃), β; kwargs...)
+softmin(x̃, β::Real; kwargs...) = softmin(rv2pmf(x̃)..., β; kwargs...)

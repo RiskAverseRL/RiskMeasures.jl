@@ -147,15 +147,23 @@ end
     end
 end
 
+@testset "Positive homogeneity" begin
+    
+end
+
+@testset "Translation and positive homogeneity" begin
+    
+end
+
 @testset "EVaR reciprocal" begin
     p = [0.05, 0.1, 0.1, 0.05, 0.2, 0.5]
     X = [-4.7, 5.3, 1.6, 2.8, 10, -20];
     x̃ = DiscreteNonParametric(X, p)
 
     for α ∈ range(0,1,length=10)
-        e1 = EVaR(x̃, α; reciprocal = false)
-        e2 = EVaR(x̃, α; reciprocal = true)
-        @test e1 ≈ e2
+        e1 = EVaR_e(x̃, α; reciprocal = false)
+        e2 = EVaR_e(x̃, α; reciprocal = true)
+        @test e1.value ≈ e2.value
         @test e1.β ≈ e2.β
     end
 end
@@ -166,7 +174,7 @@ end
     p .= p ./ sum(p)
     x̃ = DiscreteNonParametric(X, p)
     
-    for α ∈ [0., 0.2, 0.4, 0.6, 0.8, 1.0]
+    for α ∈ 0:0.2:1 
         c = CVaR_e(x̃, α)
         @test c.value ≈ mean(c.solution)
         e = EVaR_e(x̃, α)
