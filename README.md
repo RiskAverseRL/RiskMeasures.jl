@@ -43,7 +43,7 @@ CVaR(x̃ - 10, 0.1)  # conditional value at risk
 
 ```
 
-Extended methods `VaR_e`, `CVaR_e`, and `EVaR_e` also return additional parameters, such as the distribution that attains the risk value and the optimal `β`.
+Extended methods `VaR_e`, `CVaR_e`, and `EVaR_e` also return additional statistics and values, such as the distribution that attains the risk value and the optimal `β` in EVaR.
 
 Please see the unit tests for examples of how this package can be used to compute the risk. 
 
