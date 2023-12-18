@@ -36,14 +36,16 @@ function VaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::
     T = eltype(pmf)
     # special cases
     if isone(α) # minimum
-        return essinf_e(value, pmf, α; check_inputs = check_inputs)
+        return essinf_e(values, pmf; check_inputs = check_inputs)
     elseif iszero(α) # maximum (it is unbounded)
-        return (value = typemax(Tval), index = -1)
+        return (value = typemax(T), index = -1)
     end
 
-    # Efficiency note: sorting by values is O(n*log n); quickselect is O(n) and would suffice
+    # Efficiency note: sorting by values is O(n*log n); quickselect is O(n) and
+    # would suffice
+    
     # descending sort (to make sure that VaR is optimistic as it should be)
-    sortedi = sort(eachindex(x̃, pmf); by=(i->@inbounds -x̃[i]))
+    sortedi = sort(eachindex(values, pmf); by=(i->@inbounds -values[i]))
 
     pos = last(sortedi) # this value is used when the loop does not break
     p_accum = zero(T) 
@@ -59,5 +61,15 @@ function VaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::
 end
 
 
-VaR(x̃::DiscreteNonParametric, α::Real; kwargs...) =
+VaR(x̃, α::Real; kwargs...) =
     VaR_e(support(x̃), probs(x̃), α; kwargs...).value
+
+function VaR_e(x̃, α::Real; kwargs...)
+    pmf = support(x̃)
+    v1 = VaR_e(pmf, probs(x̃), α; kwargs...)
+    T = eltype(pmf)
+    vpmf = zeros(T, length(pmf))
+    vpmf[v1.index] = 1.0
+    ỹ = DiscreteNonParametric(support(x̃), vpmf)
+    (value = v1.value, solution = ỹ)
+end

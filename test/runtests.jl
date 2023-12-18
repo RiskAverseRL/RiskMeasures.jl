@@ -1,132 +1,148 @@
 using RiskMeasures
 using Test
 
-using Statistics: median
+using Statistics: median, mean
 using LinearAlgebra: ones
+using Distributions
 
 @testset "ERM" begin
     X = [2. , 5. , 6. , 9. , 3., 1.]
     p = [.1 , .1 , .2 , .5 , .1, 0.]
+    x̃ = DiscreteNonParametric(X, p)
     
-    @test isapprox(erm(X,p,0.), erm(X,p,1e-5); atol=1e-3)
-    @test erm(X,p,0.) ≈ sum(X .* p)
-    @test erm(X,p,0) ≥ erm(X,p,1) ≥ erm(X,p,2.)
-    @test erm(X,p,Inf) ≈ 2.
+    @test isapprox(ERM(x̃, 0.), ERM(x̃, 1e-5); atol=1e-3)
+    @test ERM(x̃,0.) ≈ sum(X .* p)
+    @test ERM(x̃,0) ≥ ERM(x̃,1) ≥ ERM(x̃,2.)
+    @test ERM(x̃,Inf) ≈ 2.
 
     # test translation invariance
-    @test erm(X .+ 100., p, 2.) ≈ erm(X, p, 2.) + 100.
-    @test erm(X .- 100., p, 2.) ≈ erm(X, p, 2.) - 100.
+    @test ERM(x̃ + 100, 2.) ≈ ERM(x̃, 2.) + 100.
+    @test ERM(x̃ - 100, 2.) ≈ ERM(x̃, 2.) - 100.
     
-    @test erm(X .+ 300., p, 3.) ≈ erm(X, p, 3.) + 300.
-    @test erm(X .- 300., p, 3.) ≈ erm(X, p, 3.) - 300.
+    @test ERM(x̃ + 300., 3.) ≈ ERM(x̃, 3.) + 300.
+    @test ERM(x̃ - 300., 3.) ≈ ERM(x̃, 3.) - 300.
 end
 
 @testset "ERM bounds" begin
     X = [2. , 5. , 6. , 9. , 3., 1.]
     p = [.1 , .1 , .2 , .5 , .1, 0.]
-    p2 = [.1 , .1 , .2 , .5 , .1]
+    x̃ = DiscreteNonParametric(X, p)
 
-    @test_throws ErrorException erm(X, p, -1.)
-    @test_throws ErrorException erm(X, p2, 2.)
+    @test_throws ErrorException ERM(x̃, -1.)
 end
 
 
 @testset "VaR" begin
     p = [0.1, 0.2, 0.3, 0.1, 0.3, 0.0]
     X = [4, 5, 1, 2, -1, -2];
+    x̃ = DiscreteNonParametric(X, p)
 
-    @test var(X,p,1).var ≈ -1.0
-    @test var(X, p, 0.99).var ≈ -1.0
-    @test var(X, p, 0.).var ≈ 5.0
-    @test var(X, p, 0.5).var ≈ 1.0
-    @test var(X, p, 0.4).var ≈ 2.0
+    @test VaR(x̃, 1) ≈ -1.0
+    @test VaR(x̃, 0.99) ≈ -1.0
+    @test VaR(x̃, 0.) ≈ Inf
+    @test VaR(x̃, 0.5) ≈ 1.0
+    @test VaR(x̃, 0.4) ≈ 2.0
 
     p = [0.1, 0.2, 0.3, 0.1, 0.3]
     X = [4., 5., 1., 2., -1.]
+    x̃ = DiscreteNonParametric(X, p)
 
-    @test var(X, p, 1).var ≈ -1.0
-    @test var(X, p, 0.99).var ≈ -1.0
-    @test var(X, p, 0.0).var ≈ 5.0
-    @test var(X, p, 0.5).var ≈ 1.0
-    @test var(X, p, 0.4).var ≈ 2.0
+    @test VaR(x̃, 1) ≈ -1.0
+    @test VaR(x̃, 0.99) ≈ -1.0
+    @test VaR(x̃, 0.0) ≈ Inf
+    @test VaR(x̃, 0.5) ≈ 1.0
+    @test VaR(x̃, 0.4) ≈ 2.0
 end
 
-@testset "VaR bounds" begin
+@testset "VaR/CVaR/EVaR bounds" begin
     X = [2. , 5. , 6. , 9. , 3., 1.]
     p = [.1 , .1 , .2 , .5 , .1, 0.]
-    p2 = [.1 , .1 , .2 , .5 , .1]
+    x̃ = DiscreteNonParametric(X, p)
 
-    @test_throws ErrorException var(X, p, -1) 
-    @test_throws ErrorException var(X, p, 2) 
-    @test_throws ErrorException var(X, p2, 0.5)
+    @test_throws ErrorException VaR(x̃, -1) 
+    @test_throws ErrorException VaR(x̃, 2) 
+
+    @test_throws ErrorException CVaR(x̃, -1) 
+    @test_throws ErrorException CVaR(x̃, 2) 
+
+    @test_throws ErrorException EVaR(x̃, -1) 
+    @test_throws ErrorException EVaR(x̃, 2) 
 end
 
 @testset "VaR median" begin
     # must find the median when it is unique
     X = [2. , 5. , 6. , 9. , 3., 1., -1.]
     p = ones(length(X)) / length(X)
+    x̃ = DiscreteNonParametric(X, p)
 
-    @test var(X, p, 0.5).var ≈ median(X)
-    @test -var(-X, p, 0.5).var ≈ median(X)
+    @test VaR(x̃, 0.5) ≈ median(X)
+    @test -VaR(-x̃, 0.5) ≈ median(X)
 
     # must be a bound on the media when it is not
     X = [2. , 5. , 6. , 9. , 3., 1.]
     p = ones(length(X)) / length(X)
+    x̃ = DiscreteNonParametric(X, p)
 
-    @test var(X, p, 0.5).var ≥ median(X)
-    @test -var(-X, p, 0.5).var ≤ median(X)
+    @test VaR(x̃, 0.5) ≥ median(X)
+    @test -VaR(-x̃, 0.5) ≤ median(X)
     
     # just test a larger version
     X = collect(-30:30)
     p = ones(length(X)) / length(X)
+    x̃ = DiscreteNonParametric(X, p)
 
-    @test var(X, p, 0.5).var ≈ median(X)
-    @test -var(-X, p, 0.5).var ≈ median(X)
+    @test VaR(x̃, 0.5) ≈ median(X)
+    @test -VaR(-x̃, 0.5) ≈ median(X)
 end
 
 @testset "CVaR" begin
     p = [0.1, 0.2, 0.3, 0.1, 0.3, 0.0]
     X = [4, 5, 1, 2, -1, -2];
+    x̃ = DiscreteNonParametric(X, p)
 
-    @test cvar(X, p, 1).cvar ≈ -1.
-    @test cvar(X, p, 0.99).cvar ≈ -1.0
-    @test cvar(X, p, 0.0).cvar ≈ 1.6
-    @test cvar(X, p, 0.5).cvar ≈ -0.2
-    @test cvar(X, p, 0.4).cvar ≈ 0.0
+    @test CVaR(x̃, 1) ≈ -1.
+    @test CVaR(x̃, 0.99) ≈ -1.0
+    @test CVaR(x̃, 0.0) ≈ 1.6
+    @test CVaR(x̃, 0.5) ≈ -0.2
+    @test CVaR(x̃, 0.4) ≈ 0.0
     
     p = [0.1, 0.2, 0.3, 0.1, 0.3]
     X = [4., 5., 1., 2., -1.]
+    x̃ = DiscreteNonParametric(X, p)
 
-    @test cvar(X, p, 1.).cvar ≈ -1.0
-    @test cvar(X, p, 1.00).cvar ≈ -1.0
-    @test cvar(X, p, 0.0).cvar ≈ 1.6
-    @test cvar(X, p, 0.5).cvar ≈ -0.2
-    @test cvar(X, p, 0.4).cvar ≈ 0
+    @test CVaR(x̃, 1.) ≈ -1.0
+    @test CVaR(x̃, 1.00) ≈ -1.0
+    @test CVaR(x̃, 0.0) ≈ 1.6
+    @test CVaR(x̃, 0.5) ≈ -0.2
+    @test CVaR(x̃, 0.4) ≈ 0
 end
 
 @testset "Risk measures order" begin
     p = [0.1, 0.2, 0.3, 0.1, 0.3, 0.0]
     X = [0, 5, 6, 2, -1, -10];
+    x̃ = DiscreteNonParametric(X, p)
 
     for α ∈ range(0.,1.,10)
         @test all(p .≥ 0.)
-        @test minimum(X) ≤ evar(X, p, α; βmax = 60).evar 
-        @test evar(X, p, α; βmax = 60).evar ≤ cvar(X, p, α).cvar
-        @test cvar(X, p, α).cvar ≤ var(X, p, α).var
-        @test cvar(X, p, α).cvar ≤ mean(X, p)
-        @test var(X, p, α).var ≤ maximum(X)
+
+        @test minimum(X) ≤ EVaR(x̃, α; βmax = 60)
+        
+        @test EVaR(x̃, α; βmax = 60) ≤ CVaR(x̃, α)
+        @test CVaR(x̃, α) ≤ VaR(x̃, α)
+        @test CVaR(x̃, α) ≤ mean(x̃)
     end
 end
 
 @testset "Translation equivariance" begin
     p = [0.05, 0.1, 0.1, 0.05, 0.2, 0.5]
     X = [-4.7, 5.3, 1.6, 2.8, 10, -20];
-    e = ones(length(X))
+    x̃ = DiscreteNonParametric(X, p)
+
     for α ∈ range(0., 1., 5)
         for c ∈ range(-10., 10., 6)
-            @test var(X .+ c .* e, p, α).var - c ≈ var(X, p, α).var
-            @test cvar(X .+ c .* e, p, α).cvar - c ≈ cvar(X, p, α).cvar
-            @test evar(X .+ c .* e, p, α).evar - c ≈ evar(X, p, α).evar
+            @test VaR(x̃ + c, α) - c ≈ VaR(x̃, α)
+            @test CVaR(x̃ + c, α) - c ≈ CVaR(x̃, α)
+            @test EVaR(x̃ + c, α) - c ≈ EVaR(x̃, α)
         end
     end
 end
@@ -134,43 +150,29 @@ end
 @testset "EVaR reciprocal" begin
     p = [0.05, 0.1, 0.1, 0.05, 0.2, 0.5]
     X = [-4.7, 5.3, 1.6, 2.8, 10, -20];
+    x̃ = DiscreteNonParametric(X, p)
 
     for α ∈ range(0,1,length=10)
-        e1 = evar(X, p, α; reciprocal = false)
-        e2 = evar(X, p, α; reciprocal = true)
-        @test e1.evar ≈ e2.evar
+        e1 = EVaR(x̃, α; reciprocal = false)
+        e2 = EVaR(x̃, α; reciprocal = true)
+        @test e1 ≈ e2
         @test e1.β ≈ e2.β
     end
 end
 
-@testset "CVaR bounds" begin
-    X = [2. , 5. , 6. , 9. , 3., 1.]
-    p = [.1 , .1 , .2 , .5 , .1, 0.]
-    p2 = [.1 , .1 , .2 , .5 , .1]
-
-    @test_throws ErrorException cvar(X, p, -1) 
-    @test_throws ErrorException cvar(X, p, 2) 
-    @test_throws ErrorException cvar(X, p2, 0.5)
-end
-
-@testset "CVaR distribution matches" begin
+@testset "VaR/EVaR/CVaR distribution matches" begin
     X = collect(1.0:20.0)
     p = collect(20.0:-1:1.0)
     p .= p ./ sum(p)
+    x̃ = DiscreteNonParametric(X, p)
+    
     for α ∈ [0., 0.2, 0.4, 0.6, 0.8, 1.0]
-        c = cvar(X, p, α)
-        @test c.cvar ≈ sum(c.p.p .* X)
+        c = CVaR_e(x̃, α)
+        @test c.value ≈ mean(c.solution)
+        e = EVaR_e(x̃, α)
+        @test e.value ≈ mean(e.solution)
+        v = VaR_e(x̃, α)
+        @test v.value ≈ mean(v.solution)
     end
 end
 
-@testset "EVaR distribution matches" begin
-    X = collect(1.0:20.0)
-    p = collect(20.0:-1:1.0)
-    p .= p ./ sum(p)
-
-    for α ∈ [0., 0.2, 0.4, 0.6, 0.8, 1.0]
-        α = 0.3
-        c = evar(X, p, α)
-        @test c.evar ≈ sum(c.p.p .* X)
-    end
-end
