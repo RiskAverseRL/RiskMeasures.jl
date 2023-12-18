@@ -25,20 +25,31 @@ In general, the smaller value of the risk parameter indicates that the risk meas
 
 ```Julia
 using RiskMeasures
-X = [1, 5, 6, 7, 20]
-p = [0.1, 0.1, 0.2, 0.5, 0.1]
+using Distributions
 
-var(X, p, 0.1)   # value at risk
-cvar(X, p, 0.1)  # conditional value at risk
-evar(X, p, 0.1)  # entropic value at risk
-erm(X, p, 0.1)   # entropic risk measure
+x̃ = DiscreteNonParametric([1, 5, 6, 7, 20], [0.1, 0.1, 0.2, 0.5, 0.1])
+
+VaR(x̃, 0.1)   # value at risk
+CVaR(x̃, 0.1)  # conditional value at risk
+EVaR(x̃, 0.1)  # entropic value at risk
+ERM(x̃, 0.1)   # entropic risk measure
 ```
+
+We can also compute risk measures of transformed random variables
+
+```Julia
+VaR(5*x̃ + 10, 0.1)   # value at risk
+CVaR(x̃ - 10, 0.1)  # conditional value at risk
+
+```
+
+Extended methods `VaR_e`, `CVaR_e`, and `EVaR_e` also return additional parameters, such as the distribution that attains the risk value and the optimal `β`.
 
 Please see the unit tests for examples of how this package can be used to compute the risk. 
 
 ## Future development plans:
 
-- Integrate with Distributions.jl to support computing risk measures for parametric distributions
+- Analytical computation for special distributions, like Normal and others
 - Add an optional intergration with Mosek's exponential cones to support computation of EVaR. 
 
 ## See Also

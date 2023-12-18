@@ -4,6 +4,7 @@ using Test
 using Statistics: median, mean
 using LinearAlgebra: ones
 using Distributions
+import Random
 
 @testset "ERM" begin
     X = [2. , 5. , 6. , 9. , 3., 1.]
@@ -148,11 +149,33 @@ end
 end
 
 @testset "Positive homogeneity" begin
-    
+    p = [0.05, 0.1, 0.1, 0.05, 0.2, 0.5]
+    X = [-4.7, 5.3, 1.6, 2.8, 10, -20];
+    x̃ = DiscreteNonParametric(X, p)
+
+    for α ∈ range(0., 1., 5)
+        for c ∈ range(0.1, 10., 6)
+            @test ≈(VaR(x̃*c, α), c*VaR(x̃, α), atol=1e-5, rtol=0.01)
+            @test ≈(CVaR(x̃*c, α), c*CVaR(x̃, α), atol=1e-5, rtol=0.01)
+            @test ≈(EVaR(x̃*c, α), c*EVaR(x̃, α), atol=1e-5, rtol=0.01)
+        end
+    end
 end
 
-@testset "Translation and positive homogeneity" begin
+@testset "TI and PH" begin
     
+    Random.seed!(1981)
+    x̃ = DiscreteNonParametric(rand(Normal(), 10), rand(Dirichlet(ones(10))))
+
+    for α ∈ range(0., 1., 5)
+        for c ∈ range(-10., 10., 6)
+            for a ∈ range(0.1, 10., 6)
+                @test ≈(VaR(x̃*a+c, α), a*VaR(x̃,α)+c, atol=1e-5, rtol=0.001)
+                @test ≈(CVaR(x̃*a+c, α), a* CVaR(x̃,α)+c, atol=1e-5, rtol=0.001)
+                @test ≈(EVaR(x̃*a+c, α), a*EVaR(x̃,α)+c, atol=1e-5, rtol=0.001)
+            end
+        end
+    end
 end
 
 @testset "EVaR reciprocal" begin
