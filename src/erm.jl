@@ -1,121 +1,83 @@
+using Distributions
+
 """
-    erm(X, p::Distribution, α [, Xmin])
+    ERM(x̃, β [, x̃min, check_inputs = true])
 
-Compute the entropic risk measure of the random variable `X` represented as 
-a vector over outcomes and distributed according to the measure `p` with risk level `α`. 
+Compute the entropic risk measure of the random variable `x̃` with risk level `β`. 
 
-The optional `Xmin` parameter is used as an offset in order to avoid overflows
+The optional `x̃min` parameter is used as an offset in order to avoid overflows
 when computing the exponential function. If not provided, the minimum value
-of `X` is used instead. 
+of `x̃` is used instead. 
 
-Assumes a maximization problem. Using `α=0` computes expectation
-and `α=Inf` computes the essential infimum (smallest value with positive probability).
+Assumes a maximization problem. Using `β=0` computes expectation
+and `β=Inf` computes the essential infimum (smallest value with positive probability).
 
 More details: https://en.wikipedia.org/wiki/Entropic_risk_measure
 """
-function erm end
+function ERM end
 
-erm(X::AbstractVector{<:Real}, α::Real) = erm(X, uniform(length(X)), α)
-erm(X::AbstractVector{<:Real}, p, α) = erm(X, p, α, minimum(X))
-erm(X::AbstractVector{<:Real}, p::AbstractVector{T}, α::Real, Xmin::Real) where {T<:Real} =
-    erm(X, Distribution{T}(p), α, Xmin)
+function ERM(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, β::Real;
+             x̃min::Real = -Inf, check_inputs = true)
+    
+    check_inputs && _check_pmf(values, pmf)
+    β < zero(β) && _bad_risk("Risk level β must be non-negative.")
 
-function erm(X::AbstractVector{<:Real}, p::Distribution{<:Real}, α::Real, Xmin::Real)
-    length(X) == length(p) || _bad_distribution("Lengths of X and p must match.")
-    length(X) > 0 || _bad_risk("X must have some elements")
-    if iszero(α)
-        mean(X, p) |> float
-    elseif isinf(α) && α > zero(α)
-        minimum(@inbounds X[i] for i ∈ 1:length(X) if !iszero(p.p[i])) |> float
-    elseif zero(α) ≤ α 
-        # because entropic risk measure is translation equivariant, we can change X so that
-        # it is positive. That change makes it less likely that it overflows
-        if isfinite(Xmin)
-            #@fastmath Xmin-one(α) / α*log(sum(p.p .* exp.(-α .* (X .- Xmin) ))) |> float
-            a = Iterators.map((x,p) -> (@fastmath p * exp(-α * (x - Xmin))), X, p.p) |> sum
-            @fastmath Xmin - one(α) / α * log(a) |> float
-        else
-            NaN |> float
-        end
-    else
-        _bad_risk("Risk level α must be non-negative.")
-    end
+    if iszero(β)
+        return values' * pmf 
+    elseif isinf(β) && β > zero(β)
+        return essinf_e(values, pmf; check_inputs = false).value
+    end 
+    # because entropic risk measure is translation equivariant, we can change values
+    # so that it is positive. That change makes it less likely that it overflows
+    x̃min = isfinite(x̃min) ? x̃min : minimum(values)
+    
+    #@fastmath x̃min-one(β) / β*log(sum(pmf .* exp.(-β .* (values .- x̃min) ))) |> float
+    a = Iterators.map((x,p) -> (@fastmath p * exp(-β * (x - x̃min))), values, pmf) |> sum
+    @fastmath x̃min - one(β) / β * log(a) 
 end
 
-
+ERM(x̃, β::Real; kwargs...) = ERM(rv2pmf(x̃)..., β; kwargs...)
 
 """
-    softmin(X, p::Distribution, α [, Xmin])
+    softmin(x̃, β; x̃min check_inputs = true)
 
-Compute a weighted softmin function for random variable `X` represented as 
-a vector over outcomes and distributed according to the measure `p` with risk level `α`. 
+Compute a weighted softmin function for random variable `x̃` with risk level `β`. 
 This can be seen as an approximation of the arg min function and not the min function.
 
 The operator computes a distribution p such that
-`` p_i = \frac{e^{-α x_i}}{E[e^{-α X}]} ``
+```math
+p_i = \\frac{e^{-β x_i}}{\\mathbb{E}[e^{-β x̃}]}
+```
 
-The optional `Xmin` parameter is used as an offset in order to avoid overflows
+The optional `x̃min` parameter is used as an offset in order to avoid overflows
 when computing the exponential function. If not provided, the minimum value
-of `X` is used instead. 
+of `x̃` is used instead. 
 
-The value α must be positive
+The value β must be positive
 """
 function softmin end
 
-softmin(X, p, α) = softmin(X, p, α, minimum(X))
-softmin(X::AbstractVector{<:Real}, p::AbstractVector{T}, α::Real) where {T<:Real} =
-    softmin(X, Distribution{T}(p), α)
-softmin(X::AbstractVector{<:Real}, α::Real) = softmin(X, uniform(length(X)), α)
-
-function softmin(X::AbstractVector{<:Real}, p::Distribution{T}, α::Real, Xmin::Real) where
-    {T <: Real}
+function softmin(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real},
+                 β::Real; x̃min::Real = -Inf, check_inputs = true) 
     
-    length(X) == length(p) || _bad_distribution("Lengths of X and p must match.")
-    length(X) > 0 || _bad_risk("X must have some elements")
+    check_inputs && _check_pmf(values, pmf)
 
-    if α > zero(α)
-        #  TODO: only needs to look at X with pos prob.
+    if β > zero(β)
+        # TODO: only needs to look at values with pos prob.
         # because softmin is translation invariant add the subtract the smallest value
-        # ensures that X ≥ 0
-        if isfinite(Xmin) 
-            np = similar(p.p)
-            np .= @fastmath p.p .* exp.(-α .* (X .- Xmin) )
+        # ensures that values ≥ 0
+        if isfinite(x̃min) 
+            np = similar(pmf)
+            np .= @fastmath pmf .* exp.(-β .* (values .- x̃min) )
             np .= @fastmath inv(sum(np)) .* np
-            mapreduce(isfinite, &, np) || error("Overflow, reduce α.")
+            mapreduce(isfinite, &, np) || error("Overflow, reduce β.")
             np
         else
             error("Input must be finite.")
         end
     else
-        _bad_risk("Risk level α must be positive.")
+        _bad_risk("Risk level β must be positive (>0).")
     end
 end
 
-
-"""
-    softmintrue(X, p::Distribution, α [, Xmin])
-
-Compute a weighted approximation of the min function for random variable `X` represented as 
-a vector over outcomes and distributed according to the measure `p` with risk level `α`. 
-
-The operator computes a distribution p such that
-`` \frac{E[-α X * e^{-α x_i}]}{E[e^{-α X}]} ``
-
-The optional `Xmin` parameter is used as an offset in order to avoid overflows
-when computing the exponential function. If not provided, the minimum value
-of `X` is used instead. 
-
-The value α must be positive
-"""
-function softmintrue end
-
-softmintrue(X, p, α) = softmintrue(X, p, α, minimum(X))
-softmintrue(X::AbstractVector{<:Real}, p::AbstractVector{T}, α::Real) where {T<:Real} =
-    softmintrue(X, Distribution{T}(p), α)
-softminture(X::AbstractVector{<:Real}, α::Real) = softmintrue(X, uniform(length(X)), α)
-
-function softmintrue(X::AbstractVector{<:Real}, p::Distribution{T}, α::Real, Xmin::Real) where
-    {T <: Real}
-    pn = softmin(X, p, α, Xmin)
-    sum(pn .* (-α * X))
-end
+softmin(x̃, β::Real; kwargs...) = softmin(rv2pmf(x̃)..., β; kwargs...)

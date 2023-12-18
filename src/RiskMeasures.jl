@@ -1,22 +1,21 @@
 module RiskMeasures
 
-# Write your package code here.
-
 include("general.jl")
 
-include("distribution.jl")
-export Distribution, uniform, mean
+include("essinf.jl")
+export essinf, essinf_e
+
+include("erm.jl")
+export ERM, softmin
 
 include("var.jl")
-export var
+export VaR, VaR_e
 
 include("cvar.jl")
-export cvar
+export CVaR, CVaR_e
     
-include("erm.jl")
-export erm
-
 include("evar.jl")
-export evar
+export EVaR, EVaR_e
+
 
 end

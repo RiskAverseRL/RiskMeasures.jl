@@ -1,67 +1,82 @@
 """
-    var(X, p::Distribution, α) 
+    VaR(x̃, α) 
 
-Compute the value at risk at risk level `α` for the random variable `X` disctributed
-according to the measure `p` in ``n \\log(n)`` time where `n = length(X)`. 
+Compute the value at risk at risk level `α` for the random variable `x̃`.
 
-Risk must satisfy ``α∈[0,1]`` and `α=0.5` computes the median and `α=1` computes the 
-essential infimum (smallest value with positive probability) and `α=0` computes
-the essential supremum.
+Risk must satisfy ``α ∈ [0,1]`` and `α=0.5` computes the median and `α=1` computes the 
+essential infimum (smallest value with positive probability) and `α=0` returns infinity.
 
-Assumes a reward maximization setting and solves for
-``\\inf \\{x ∈ \\mathbb{R} : \\mathbb{P}[X ≤ x] > 1-α \\}``
+Solves for
+``\\inf \\{x ∈ \\mathbb{R} : \\mathbb{P}[x̃ ≤ x] > 1-α \\}``
 
 In general, this function is neither convex nor concave.
-
-Returns the value var and an index `i` such that `X[i] = x` in the minimization above.
 """
-function var(X::AbstractVector{T}, p::Distribution{T2}, α::Real) where
-             {T<:Real,T2<:Real}
+function VaR end
 
-    # TODO: should be solving for
-    #``\\inf \\{x ∈ \\mathbb{R} : \\mathbb{P}[X ≤ x] > 1-α \\}
-    # with a strict inequality
+# TODO: need to make sure that we are solving for
+#``\\inf \\{x ∈ \\mathbb{R} : \\mathbb{P}[x̃ ≤ x] > 1-α \\}
+# with a strict inequality; check on Bernoulli distribution
+
+"""
+    VaR_e(values, pmf, α; ...) 
+
+Compute VaR for a discrete random variable with `values` and the probability mass
+function `pmf`. See `VaR(x̃, α)` for more details. Also compute the index that achieves 
+
+Runs in ``n \\log(n)`` time where `n = length(x̃)`.
+
+Also returns the value VaR and an index `i` such that `values[i] = x` in the minimization above. If such an index does not exist, then returns -1.
+"""
+function VaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
+               check_inputs = true) 
+
+    _check_α(α)
+    check_inputs && _check_pmf(values, pmf)
     
-
-    length(X) == length(p) || _bad_distribution("Lengths of X and p must match.")
-    zero(α) ≤ α ≤ one(α) || _bad_risk("Risk level α must be in [0,1].")
-
+    T = eltype(pmf)
     # special cases
     if isone(α) # minimum
-        minval = typemax(T); minindex = -1
-        @inbounds for i ∈ eachindex(X, p.p)
-            (!iszero(p.p[i]) && X[i] < minval) &&
-                (minval = X[i]; minindex = i)
-        end
-        return (var = minval, p = minindex)
-    elseif iszero(α) # maximum
-        maxval = typemin(T); maxindex = -1
-        @inbounds for i ∈ eachindex(X, p.p)
-            (!iszero(p.p[i]) && X[i] > maxval) &&
-                (maxval = X[i]; maxindex = i)
-        end
-        return (var = maxval, p = maxindex)
+        return essinf_e(values, pmf; check_inputs = check_inputs)
+    elseif iszero(α) # maximum (it is unbounded)
+        return (value = typemax(T), index = -1)
     end
 
-    # Efficiency note: sorting by X is O(n*log n); quickselect is O(n) and would suffice
+    # Efficiency note: sorting by values is O(n*log n); quickselect is O(n) and
+    # would suffice
+    
     # descending sort (to make sure that VaR is optimistic as it should be)
-    sortedi = sort(eachindex(X, p.p); by=(i->@inbounds -X[i]))
+    sortedi = sort(eachindex(values, pmf); by=(i->@inbounds -values[i]))
 
     pos = last(sortedi) # this value is used when the loop does not break
-    p_accum = zero(T2) 
+    p_accum = zero(T) 
 
-    α̂ = α - 1e-10  # numerical issues
+    α̂ = α - 1e-10  # ...numerical issues
     # find the index such that the sum of the probabilities is greater than alpha
     @inbounds for i ∈ sortedi
-        p_accum += p.p[i]
+        p_accum += pmf[i]
         p_accum ≥ α̂ && (pos = i; break)
     end
 
-    return (var = X[pos], index = pos)
+    return (value = values[pos], index = pos)
 end
 
 
-var(X::AbstractVector{T1}, p::AbstractVector{T2}, α::Real) where {T1<:Real, T2<:Real} =
-    var(X, Distribution{T2}(p), α)
+VaR(x̃, α::Real; kwargs...) =
+    VaR_e(rv2pmf(x̃)..., α; kwargs...).value
 
-var(X::AbstractVector{<:Real}, α::Real) = var(X, uniform(length(X)), α)
+function VaR_e(x̃, α::Real; kwargs...)
+    supp, pmf = rv2pmf(x̃)
+    v1 = VaR_e(supp, pmf, α; kwargs...)
+    # construct the equivalent distribution
+    Tp = eltype(pmf)
+    Ts = eltype(supp)
+    if v1.index > 0
+        vpmf = zeros(Tp, length(pmf))
+        vpmf[v1.index] = one(Tp)
+        ỹ = DiscreteNonParametric(supp, vpmf)
+    else # happens then VaR is infinite
+        ỹ = DiscreteNonParametric([typemax(Ts)],[one(Tp)])
+    end                                 
+    
+    (value = v1.value, solution = ỹ)
+end
