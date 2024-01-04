@@ -18,7 +18,7 @@ where
 and ``Δ^n`` is the probability simplex, and ``p`` is the distribution of ``x̃``. 
 
 
-More details: https://en.wikipedia.org/wiki/Expected_shortfall
+More details: <https://en.wikipedia.org/wiki/Expected_shortfall>
 """
 function CVaR end
 

@@ -12,7 +12,7 @@ of `x̃` is used instead.
 Assumes a maximization problem. Using `β=0` computes expectation
 and `β=Inf` computes the essential infimum (smallest value with positive probability).
 
-More details: https://en.wikipedia.org/wiki/Entropic_risk_measure
+More details: <https://en.wikipedia.org/wiki/Entropic_risk_measure>
 """
 function ERM end
 
