@@ -31,14 +31,13 @@ function expectile_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}
 
     xmin, xmax = extrema(values)
     # the function is minimized
-    f(x) = α * (max.(values .- x, 0) .^ 2)' * pmf - (1 - α) * (max.(x .- values, 0) .^ 2)' * (1 .- pmf)
+    f(x) = α * (max.(values .- x, 0) .^ 2)' * pmf + (1 - α) * (max.(x .- values, 0) .^ 2)' * pmf
     sol = optimize(f, xmin, xmax, Brent())
     sol.converged || error("Failed to find optimal x (unknown reason).")
     isfinite(sol.minimum) ||
         error("Overflow, computed an invalid solution. Check α.")
     x = float(sol.minimizer)
-    # compute the robust representation solution from Donsker Varadhan
-    return (value=x, sol=float(sol.minimum), pmf=pmf)
+    return (value=x, pmf=pmf)
 end
 
 
@@ -48,5 +47,5 @@ function expectile_e(x̃, α::Real; kwargs...)
     supp, pmf = rv2pmf(x̃)
     v1 = expectile_e(supp, pmf, α; kwargs...)
     ỹ = DiscreteNonParametric(supp, v1.pmf)
-    (value=v1.value, solution=ỹ, β=v1.β)
+    (value=v1.value, solution=ỹ)
 end
