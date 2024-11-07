@@ -20,5 +20,4 @@ export EVaR, EVaR_e
 include("expectile.jl")
 export expectile, expectile_e
 
-
 end

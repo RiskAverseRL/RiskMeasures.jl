@@ -5,11 +5,11 @@ using Distributions
     expectile(x̃, α)
 
 Compute the expectile risk measure of the random variable `x̃` with risk level `α` in (0,1).
-When `α = 1/2`, the function computes the expected value. Notice the rannge for \alpha is non-inclusive.
+When `α = 1/2`, the function computes the expected value. Notice the range for `α` is non-inclusive.
 
 The function solves
 ```math
-\\min_{x ∈ Real} α E((X - x)^2_+) - (1-α) E((X - x)^2_-)
+\\min_{x ∈ Real} α \\mathbb{E}((X - x)^2_+) - (1-α) \\mathbb{E}((X - x)^2_-)
 ```
 """
 function expectile end
@@ -31,11 +31,10 @@ function expectile_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}
 
     xmin, xmax = extrema(values)
     # the function is minimized
-    f(x) = α * (max.(values .- x, 0) .^ 2)' * pmf + (1 - α) * (max.(x .- values, 0) .^ 2)' * pmf
+    f(x) = α * (max.(values .- x, 0) .^ 2)' * pmf + (1 - α) * (max.(values .- x, 0) .^ 2)' * pmf
     sol = optimize(f, xmin, xmax, Brent())
     sol.converged || error("Failed to find optimal x (unknown reason).")
-    isfinite(sol.minimum) ||
-        error("Overflow, computed an invalid solution. Check α.")
+    isfinite(sol.minimum) || error("Overflow, computed an invalid solution. Check α.")
     x = float(sol.minimizer)
     return (value=x, pmf=pmf)
 end
