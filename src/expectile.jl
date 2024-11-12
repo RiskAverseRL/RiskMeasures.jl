@@ -1,6 +1,6 @@
 import Optim: optimize, Brent, BFGS
 using Distributions
-# TODO: check if the following is true
+
 """
     expectile(x̃, α)
 

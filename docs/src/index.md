@@ -95,6 +95,16 @@ ERM
 softmin
 ```
 
+## Expectile
+
+```@docs
+expectile
+```
+
+```@docs
+expectile_e
+```
+
 ## Essential Infimum
 
 ```@docs
