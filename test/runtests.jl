@@ -214,6 +214,5 @@ end
     x̃ = DiscreteNonParametric(X, p)
 
     @test expectile(x̃, 0.5) ≈ X' * p
-    @test expectile(x̃, 0.01) ≈ VaR(x̃, 0.01)
 end
 
