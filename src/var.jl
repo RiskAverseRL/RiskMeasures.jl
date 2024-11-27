@@ -28,27 +28,27 @@ Runs in ``n \\log(n)`` time where `n = length(x̃)`.
 Also returns the value VaR and an index `i` such that `values[i] = x` in the minimization above. If such an index does not exist, then returns -1.
 """
 function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
-               check_inputs = true) 
+    check_inputs=true)
 
     _check_α(α)
     check_inputs && _check_pmf(values, pmf)
-    
+
     T = eltype(pmf)
     # special cases
     if isone(α) # unbounded value
-        return (value = typemax(T), index = -1)
+        return (value=typemax(T), index=-1)
     elseif iszero(α) # maximum (it is unbounded)
-        return essinf_e(values, pmf; check_inputs = check_inputs)
+        return essinf_e(values, pmf; check_inputs=check_inputs)
     end
 
     # Efficiency note: sorting by values is O(n*log n); quickselect is O(n) and
     # would suffice
-    
+
     # sort acending
-    sortedi = sort(eachindex(values, pmf); by=(i->@inbounds values[i]))
+    sortedi = sort(eachindex(values, pmf); by=(i -> @inbounds values[i]))
 
     pos = last(sortedi) # this value is used when the loop does not break
-    p_accum = zero(T) 
+    p_accum = zero(T)
 
     α̂ = α - 1e-10  # ...numerical issues
     # find the index such that the sum of the probabilities is greater than alpha
@@ -57,7 +57,7 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
         p_accum ≥ α̂ && (pos = i; break)
     end
 
-    return (value = values[pos], index = pos)
+    return (value=values[pos], index=pos)
 end
 
 
@@ -72,8 +72,8 @@ function VaR(x̃, α::Real; kwargs...)
         vpmf[v1.index] = one(Tp)
         ỹ = DiscreteNonParametric(supp, vpmf)
     else # happens then VaR is infinite
-        ỹ = DiscreteNonParametric([typemax(Ts)],[one(Tp)])
-    end                                 
-    
-    (value = v1.value, solution = ỹ)
+        ỹ = DiscreteNonParametric([typemax(Ts)], [one(Tp)])
+    end
+
+    (value=v1.value, pmf=ỹ)
 end

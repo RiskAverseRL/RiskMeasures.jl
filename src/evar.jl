@@ -39,49 +39,49 @@ Compute EVaR for a discrete random variable with `values` and the probability ma
 function `pmf`. See `EVaR(x̃, α)` for more details.
 """
 function EVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
-              βmin = 1e-5, βmax = 100., reciprocal = false, check_inputs = true) 
+    βmin=1e-5, βmax=100.0, reciprocal=false, check_inputs=true)
 
     check_inputs && _check_α(α)
     check_inputs && _check_pmf(values, pmf)
 
     T = eltype(pmf) |> float
-    
+
     if isone(α)
-        return (value = values' * pmf, β=0.0, pmf = Vector{T}(pmf))
+        return (value=values' * pmf, β=0.0, pmf=Vector{T}(pmf))
     elseif iszero(α)
-        minval = essinf(values, pmf; check_inputs = false)
+        minval = essinf(values, pmf; check_inputs=false)
         minpmf = zeros(T, length(pmf))
         minpmf[minval.index] = one(T)
-        return (value = minval.value, β = Inf, pmf = minpmf)
+        return (value=minval.value, β=Inf, pmf=minpmf)
     end
 
     xmin = minimum(values)
     if !(reciprocal)
         # the function is minimized
         logconst = log(α)
-        f(β) = -ERM(values, pmf, β; x̃min = xmin, check_inputs = false) -
-            (logconst / β)
+        f(β) = -ERM(values, pmf, β; x̃min=xmin, check_inputs=false) -
+               (logconst / β)
         sol = optimize(f, βmin, βmax, Brent())
         sol.converged || error("Failed to find optimal β (unknown reason).")
         isfinite(sol.minimum) ||
             error("Overflow, computed an invalid solution. Reduce βmax.")
         β = float(sol.minimizer)
         # compute the robust representation solution from Donsker Varadhan
-        return (value = -float(sol.minimum), β = β,
-                pmf = softmin(values, pmf, β; x̃min=xmin, check_inputs = false)) 
+        return (value=-float(sol.minimum), β=β,
+            pmf=softmin(values, pmf, β; x̃min=xmin, check_inputs=false))
     else
-        g(λ) = - (ERM(values, pmf, 1/λ; x̃min = xmin, check_inputs = false) +
-            λ*log(α))
+        g(λ) = -(ERM(values, pmf, 1 / λ; x̃min=xmin, check_inputs=false) +
+                 λ * log(α))
         # this is the derivative, but it does not appear to be useful
         # df(λ) = - (λ * ERM(values, pmf, 1/λ; xmin) + softmin(, p, 1/λ; xmin))
         sol = optimize(g, inv(βmax), inv(βmin), Brent())
         sol.converged || error("Failed to find optimal λ (unknown reason).")
         isfinite(sol.minimum) ||
             error("Overflow, computed an invalid solution. Reduce βmax.")
-        β = 1. / float(sol.minimizer)
+        β = 1.0 / float(sol.minimizer)
         # compute the robust representation solution from Donsker Varadhan
-        return (value = -float(sol.minimum), β = β,
-                pmf = softmin(values, pmf, β; x̃min=xmin, check_inputs = false))
+        return (value=-float(sol.minimum), β=β,
+            pmf=softmin(values, pmf, β; x̃min=xmin, check_inputs=false))
     end
 end
 
@@ -91,5 +91,5 @@ function EVaR(x̃, α::Real; kwargs...)
     supp, pmf = rv2pmf(x̃)
     v1 = EVaR(supp, pmf, α; kwargs...)
     ỹ = DiscreteNonParametric(supp, v1.pmf)
-    (value = v1.value, solution = ỹ, β = v1.β)
+    (value=v1.value, pmf=ỹ, β=v1.β)
 end
