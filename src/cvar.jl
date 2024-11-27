@@ -43,23 +43,22 @@ function CVaR end
 Compute CVaR for a discrete random variable with `values` and the probability mass
 function `pmf`. See `CVaR(x̃, α)` for more details.
 """
-function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
-                check_inputs = true) 
-    _check_α(α)
+function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; check_inputs=true)
+    check_inputs && _check_α(α)
     check_inputs && _check_pmf(values, pmf)
-    
+
     T = eltype(pmf)
 
     # handle special cases
     if isone(α)
-        return (value = values'* pmf, pmf = Vector(pmf))
+        return (value=values' * pmf, pmf=Vector(pmf))
     elseif iszero(α)
-        minval = essinf(values, pmf; check_inputs = false)
+        minval = essinf(values, pmf; check_inputs=false)
         minpmf = zeros(T, length(pmf))
         minpmf[minval.index] = one(T)
-        return (value = minval.value, pmf = minpmf)
+        return (value=minval.value, pmf=minpmf)
     end
-    
+
     # Here on: α ∈ (0,1)
     pc = zeros(T, length(pmf))  # this is the new distribution
     value = zero(T)                  # CVaR value
@@ -68,7 +67,7 @@ function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
 
     # Efficiency note: sorting by values is O(n*log n);
     # quickselect is O(n) and would suffice but would need be based on quantile
-    sortedi = sort(eachindex(values, pmf); by=(i->@inbounds values[i]))
+    sortedi = sortperm(values)
     @inbounds for i ∈ sortedi
         # update index's probability and probability left to sum to 1.0
         increment = min(pmf[i] / α̂, p_left)
@@ -76,14 +75,14 @@ function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
         pc[i] = increment
         value += increment * values[i]
         p_left -= increment
-        p_left ≤ zero(p_left) && break 
+        p_left ≤ zero(p_left) && break
     end
-    return (value = value, pmf = pc)
+    return (value=value, pmf=pc)
 end
 
 function CVaR(x̃, α::Real; kwargs...)
     supp, pmf = rv2pmf(x̃)
     v1 = CVaR(supp, pmf, α; kwargs...)
     ỹ = DiscreteNonParametric(supp, v1.pmf)
-    (value = v1.value, solution = ỹ)
+    (value=v1.value, pmf=ỹ)
 end

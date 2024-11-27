@@ -35,6 +35,7 @@ VaR(x̃, 0.1)   # value at risk
 CVaR(x̃, 0.1)  # conditional value at risk
 EVaR(x̃, 0.1)  # entropic value at risk
 ERM(x̃, 0.1)   # entropic risk measure
+expectile(x̃, 0.1)  # expectile
 ```
 
 We can also compute risk measures of transformed random variables
@@ -44,7 +45,7 @@ VaR(5*x̃ + 10, 0.1)   # value at risk
 CVaR(x̃ - 10, 0.1)  # conditional value at risk
 ```
 
-Extended methods `VaR_e`, `CVaR_e`, and `EVaR_e` also return additional statistics and values, such as the distribution that attains the risk value and the optimal `β` in EVaR.
+Many methods methods `VaR`, `CVaR`, and `EVaR` also return additional statistics and values, such as the distribution that attains the risk value and the optimal `β` in EVaR. These are returned as named tuples.
 
 ## See Also
 
@@ -59,19 +60,10 @@ Extended methods `VaR_e`, `CVaR_e`, and `EVaR_e` also return additional statisti
 VaR
 ```
 
-```@docs
-VaR_e
-```
-
-
 ## Conditional Value at Risk
 
 ```@docs
 CVaR
-```
-
-```@docs
-CVaR_e
 ```
 
 ## Entropic Value at Risk
@@ -79,10 +71,6 @@ CVaR_e
 
 ```@docs
 EVaR
-```
-
-```@docs
-EVaR_e
 ```
 
 ## Entropic Risk Measure
@@ -101,16 +89,8 @@ softmin
 expectile
 ```
 
-```@docs
-expectile_e
-```
-
 ## Essential Infimum
 
 ```@docs
 essinf
-```
-
-```@docs
-essinf_e
 ```
