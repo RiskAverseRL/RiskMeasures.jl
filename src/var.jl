@@ -38,14 +38,14 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
     if isone(α) # unbounded value
         return (value=typemax(T), index=-1)
     elseif iszero(α) # maximum (it is unbounded)
-        return essinf_e(values, pmf; check_inputs=check_inputs)
+        return essinf(values, pmf; check_inputs=check_inputs)
     end
 
     # Efficiency note: sorting by values is O(n*log n); quickselect is O(n) and
     # would suffice
 
     # sort acending
-    sortedi = sort(eachindex(values, pmf); by=(i -> @inbounds values[i]))
+    sortedi = sortperm(values)
 
     pos = last(sortedi) # this value is used when the loop does not break
     p_accum = zero(T)
@@ -54,7 +54,7 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
     # find the index such that the sum of the probabilities is greater than alpha
     @inbounds for i ∈ sortedi
         p_accum += pmf[i]
-        p_accum ≥ α̂ && (pos = i; break)
+        p_accum >= α̂ && (pos = i; break)
     end
 
     return (value=values[pos], index=pos)

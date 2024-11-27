@@ -67,7 +67,7 @@ function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
 
     # Efficiency note: sorting by values is O(n*log n);
     # quickselect is O(n) and would suffice but would need be based on quantile
-    sortedi = sort(eachindex(values, pmf); by=(i -> @inbounds values[i]))
+    sortedi = sortperm(values)
     @inbounds for i ∈ sortedi
         # update index's probability and probability left to sum to 1.0
         increment = min(pmf[i] / α̂, p_left)
