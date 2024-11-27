@@ -38,7 +38,7 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
     if isone(α) # unbounded value
         return (value = typemax(T), index = -1)
     elseif iszero(α) # maximum (it is unbounded)
-        return essinf_e(values, pmf; check_inputs = check_inputs)
+        return essinf(values, pmf; check_inputs = check_inputs)
     end
 
     # Efficiency note: sorting by values is O(n*log n); quickselect is O(n) and
