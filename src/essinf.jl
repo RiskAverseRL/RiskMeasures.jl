@@ -7,14 +7,14 @@ value with positive probability
 function essinf end
 
 """
-    essinf_e(values, pmf; ...)
+    essinf(values, pmf; ...)
 
 Compute the value for a random variable with `values` and the probability mass
 function `pmf`.
 
-See `essinf_e(x̃)` for more details.
+See `essinf(x̃)` for more details.
 """
-function essinf_e(values::AbstractVector{Tval}, pmf::AbstractVector{<:Real};
+function essinf(values::AbstractVector{Tval}, pmf::AbstractVector{<:Real};
                   check_inputs = true) :: @NamedTuple{value::Tval, index::Int} where
     {Tval <: Real}
     

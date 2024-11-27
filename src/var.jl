@@ -18,7 +18,7 @@ function VaR end
 # with a strict inequality; check on Bernoulli distribution
 
 """
-    VaR_e(values, pmf, α; ...) 
+    VaR(values, pmf, α; ...) 
 
 Compute VaR for a discrete random variable with `values` and the probability mass
 function `pmf`. See `VaR(x̃, α)` for more details. Also compute the index that achieves 
@@ -27,7 +27,7 @@ Runs in ``n \\log(n)`` time where `n = length(x̃)`.
 
 Also returns the value VaR and an index `i` such that `values[i] = x` in the minimization above. If such an index does not exist, then returns -1.
 """
-function VaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
+function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
                check_inputs = true) 
 
     _check_α(α)
@@ -35,17 +35,17 @@ function VaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::
     
     T = eltype(pmf)
     # special cases
-    if isone(α) # minimum
-        return essinf_e(values, pmf; check_inputs = check_inputs)
-    elseif iszero(α) # maximum (it is unbounded)
+    if isone(α) # unbounded value
         return (value = typemax(T), index = -1)
+    elseif iszero(α) # maximum (it is unbounded)
+        return essinf_e(values, pmf; check_inputs = check_inputs)
     end
 
     # Efficiency note: sorting by values is O(n*log n); quickselect is O(n) and
     # would suffice
     
-    # descending sort (to make sure that VaR is optimistic as it should be)
-    sortedi = sort(eachindex(values, pmf); by=(i->@inbounds -values[i]))
+    # sort acending
+    sortedi = sort(eachindex(values, pmf); by=(i->@inbounds values[i]))
 
     pos = last(sortedi) # this value is used when the loop does not break
     p_accum = zero(T) 
@@ -61,12 +61,9 @@ function VaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::
 end
 
 
-VaR(x̃, α::Real; kwargs...) =
-    VaR_e(rv2pmf(x̃)..., α; kwargs...).value
-
-function VaR_e(x̃, α::Real; kwargs...)
+function VaR(x̃, α::Real; kwargs...)
     supp, pmf = rv2pmf(x̃)
-    v1 = VaR_e(supp, pmf, α; kwargs...)
+    v1 = VaR(supp, pmf, α; kwargs...)
     # construct the equivalent distribution
     Tp = eltype(pmf)
     Ts = eltype(supp)

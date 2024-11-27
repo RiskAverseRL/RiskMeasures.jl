@@ -6,12 +6,12 @@ using Distributions
 
 Compute the EVaR risk measure of the random variable `x̃` with risk level `α` in [0,1].
 
-When `α = 0`, the function computes the expected value, and when `α = 1`, then the 
+When `α = 1`, the function computes the expected value, and when `α = 0`, then the 
 function computes the essential infimum (a minimum value with positive probability).
 
 The function solves
 ```math
-\\max_{β ∈ [βmin, βmax]} \\operatorname{ERM}_β (x̃) - β^{-1} \\log (1/(1-α)).
+\\max_{β ∈ [βmin, βmax]} \\operatorname{ERM}_β (x̃) - β^{-1} \\log (1/(α)).
 ```
 
 Large values of `βmax` may cause the computation to overflow.
@@ -33,12 +33,12 @@ function EVaR end
 
 
 """
-    EVaR_e(values, pmf, α; ...)
+    EVaR(values, pmf, α; ...)
 
 Compute EVaR for a discrete random variable with `values` and the probability mass
 function `pmf`. See `EVaR(x̃, α)` for more details.
 """
-function EVaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
+function EVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
               βmin = 1e-5, βmax = 100., reciprocal = false, check_inputs = true) 
 
     check_inputs && _check_α(α)
@@ -46,10 +46,10 @@ function EVaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α:
 
     T = eltype(pmf) |> float
     
-    if iszero(α)
+    if isone(α)
         return (value = values' * pmf, β=0.0, pmf = Vector{T}(pmf))
-    elseif isone(α)
-        minval = essinf_e(values, pmf; check_inputs = false)
+    elseif iszero(α)
+        minval = essinf(values, pmf; check_inputs = false)
         minpmf = zeros(T, length(pmf))
         minpmf[minval.index] = one(T)
         return (value = minval.value, β = Inf, pmf = minpmf)
@@ -58,7 +58,7 @@ function EVaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α:
     xmin = minimum(values)
     if !(reciprocal)
         # the function is minimized
-        logconst = log(1-α)
+        logconst = log(α)
         f(β) = -ERM(values, pmf, β; x̃min = xmin, check_inputs = false) -
             (logconst / β)
         sol = optimize(f, βmin, βmax, Brent())
@@ -71,7 +71,7 @@ function EVaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α:
                 pmf = softmin(values, pmf, β; x̃min=xmin, check_inputs = false)) 
     else
         g(λ) = - (ERM(values, pmf, 1/λ; x̃min = xmin, check_inputs = false) +
-            λ*log(1-α))
+            λ*log(α))
         # this is the derivative, but it does not appear to be useful
         # df(λ) = - (λ * ERM(values, pmf, 1/λ; xmin) + softmin(, p, 1/λ; xmin))
         sol = optimize(g, inv(βmax), inv(βmin), Brent())
@@ -86,11 +86,10 @@ function EVaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α:
 end
 
 
-EVaR(x̃, α::Real; kwargs...) = EVaR_e(rv2pmf(x̃)..., α; kwargs...).value
 
-function EVaR_e(x̃, α::Real; kwargs...)
+function EVaR(x̃, α::Real; kwargs...)
     supp, pmf = rv2pmf(x̃)
-    v1 = EVaR_e(supp, pmf, α; kwargs...)
+    v1 = EVaR(supp, pmf, α; kwargs...)
     ỹ = DiscreteNonParametric(supp, v1.pmf)
     (value = v1.value, solution = ỹ, β = v1.β)
 end

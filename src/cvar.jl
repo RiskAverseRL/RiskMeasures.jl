@@ -5,7 +5,8 @@ using Distributions
 
 Compute the conditional value at risk at level `α` for the random variable `x̃`.
 
-The risk level `α` must satisfy the ``α ∈ [0,1]``. Risk aversion increases with an increasing `α` and, `α = 0` represents the expectation,  `α = 1` computes the essential infimum (smallest value with positive probability).
+The risk level `α` must satisfy the ``α ∈ [0,1]``. Risk aversion descreses with an increasing `α` and, `α = 1` represents the expectation,
+`α = 0` computes the essential infimum (smallest value with positive probability).
 
 Assumes a reward maximization setting and solves the dual form
 ```math
@@ -13,7 +14,7 @@ Assumes a reward maximization setting and solves the dual form
 ```
 where
 ```math
-\\mathcal{Q} = \\left\\{q ∈ Δ^n : q_i ≤ \\frac{p_i}{1-α}\\right\\}
+\\mathcal{Q} = \\left\\{q ∈ Δ^n : q_i ≤ \\frac{p_i}{α}\\right\\}
 ```
 and ``Δ^n`` is the probability simplex, and ``p`` is the distribution of ``x̃``. 
 
@@ -23,7 +24,7 @@ More details: https://en.wikipedia.org/wiki/Expected_shortfall
 function CVaR end
 
 """
-    CVaR_e(x̃, α)
+    CVaR(x̃, α)
 
 Compute the conditional value at risk at level `α` for the random variable `x̃`. Also
 compute the equivalent random variable with the same support but a different distribution.
@@ -32,17 +33,17 @@ Returns a named tuple with `value` and the `solution` random variable that solve
 CVaR formulation. That is if `ỹ` is the solution, then the support of `x̃` and `ỹ` are the same
 and  ``\\mathbb{E}[ỹ] = \\operatorname{CVaR}_{α}[x̃]``.
 """
-function CVaR_e end
+function CVaR end
 
 
 
 """
-    CVaR_e(values, pmf, α; ...) 
+    CVaR(values, pmf, α; ...) 
 
 Compute CVaR for a discrete random variable with `values` and the probability mass
 function `pmf`. See `CVaR(x̃, α)` for more details.
 """
-function CVaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
+function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
                 check_inputs = true) 
     _check_α(α)
     check_inputs && _check_pmf(values, pmf)
@@ -50,10 +51,10 @@ function CVaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α:
     T = eltype(pmf)
 
     # handle special cases
-    if iszero(α)
+    if isone(α)
         return (value = values'* pmf, pmf = Vector(pmf))
-    elseif isone(α)
-        minval = essinf_e(values, pmf; check_inputs = false)
+    elseif iszero(α)
+        minval = essinf(values, pmf; check_inputs = false)
         minpmf = zeros(T, length(pmf))
         minpmf[minval.index] = one(T)
         return (value = minval.value, pmf = minpmf)
@@ -63,7 +64,7 @@ function CVaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α:
     pc = zeros(T, length(pmf))  # this is the new distribution
     value = zero(T)                  # CVaR value
     p_left = one(T)           # probabilities left for allocation
-    α̂ = one(α) - α                      # probabilities to allocate
+    α̂ = α                      # probabilities to allocate
 
     # Efficiency note: sorting by values is O(n*log n);
     # quickselect is O(n) and would suffice but would need be based on quantile
@@ -80,13 +81,9 @@ function CVaR_e(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α:
     return (value = value, pmf = pc)
 end
 
-# Definition for DiscreteNonparametric
-CVaR(x̃, α::Real; kwargs...) =
-    CVaR_e(rv2pmf(x̃)..., α; kwargs...).value
-
-function CVaR_e(x̃, α::Real; kwargs...)
+function CVaR(x̃, α::Real; kwargs...)
     supp, pmf = rv2pmf(x̃)
-    v1 = CVaR_e(supp, pmf, α; kwargs...)
+    v1 = CVaR(supp, pmf, α; kwargs...)
     ỹ = DiscreteNonParametric(supp, v1.pmf)
     (value = v1.value, solution = ỹ)
 end
