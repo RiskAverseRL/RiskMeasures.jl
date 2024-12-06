@@ -9,7 +9,7 @@ When `α = 1/2`, the function computes the expected value. Notice the range for 
 
 The function solves
 ```math
-\\min_{x ∈ Real} α \\mathbb{E}((x̃ - x)^2_+) - (1-α) \\mathbb{E}((x̃ - x)^2_-)
+\\argmin_{x ∈ Real} α \\mathbb{E}((x̃ - x)^2_+) - (1-α) \\mathbb{E}((x̃ - x)^2_-)
 ```
 """
 function expectile end
@@ -28,7 +28,7 @@ function expectile(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, 
     check_inputs && _check_pmf(values, pmf)
 
     if abs(α - 0.5) <= 1e-10
-        return (value = values' * pmf, pmf = pmf)
+        return (value=values' * pmf, pmf=pmf)
     end
 
     xmin, xmax = extrema(values)
