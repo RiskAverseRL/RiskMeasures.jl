@@ -3,19 +3,21 @@ module RiskMeasures
 include("general.jl")
 
 include("essinf.jl")
-export essinf, essinf_e
+export essinf, essinf
 
 include("erm.jl")
 export ERM, softmin
 
 include("var.jl")
-export VaR, VaR_e
+export VaR, VaR
 
 include("cvar.jl")
-export CVaR, CVaR_e
-    
-include("evar.jl")
-export EVaR, EVaR_e
+export CVaR, CVaR
 
+include("evar.jl")
+export EVaR, EVaR
+
+include("expectile.jl")
+export expectile
 
 end
