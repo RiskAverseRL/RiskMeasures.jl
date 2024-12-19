@@ -10,7 +10,6 @@ RiskMeasures
 
 Julia library for computing risk measures for random variables. The random variable represents *profits* or *rewards* that are to be maximized. Also the computed risk value is preferable when it is greater.
 
-All risk measures, except ERM, are non-decreasing in risk level alpha. The ERM is non-increasing in level beta.
 
 The following risk measures are currently supported
 
@@ -20,12 +19,29 @@ The following risk measures are currently supported
 - EVaR: Entropic value at risk
 - expectile: Expectile
 
-The focus is currently on random variables with categorical (discrete) probability distributions, but continuous probabilty distributions may be supported in the future too. 
+All risk measures, except ERM, are non-decreasing in risk level alpha. The ERM is non-increasing in level beta.
 
-In general, the smaller value of the risk parameter indicates that the risk measure is less risk-averse or that it is closer to the expectation operator. 
+The package currently only supports random variables with descrete probability distributions, but support for continuous probabilty distributions is planned for the future. 
 
 
 ## Examples
+
+### Using arrays
+
+```Julia
+using RiskMeasures
+
+x = [1, 5, 6, 7, 20]
+p = [0.1, 0.1, 0.2, 0.5, 0.1]
+
+VaR(x, p, 0.1)   # value at risk
+CVaR(x, p, 0.1)  # conditional value at risk
+EVaR(x, p, 0.1)  # entropic value at risk
+ERM(x, p, 0.1)   # entropic risk measure
+expectile(x̃, 0.1)   # entropic risk measure
+```
+
+### Using random variables
 
 ```Julia
 using RiskMeasures
@@ -39,6 +55,8 @@ EVaR(x̃, 0.1)  # entropic value at risk
 ERM(x̃, 0.1)   # entropic risk measure
 expectile(x̃, 0.1)   # entropic risk measure
 ```
+
+### Using transformed random variables
 
 We can also compute risk measures of transformed random variables
 

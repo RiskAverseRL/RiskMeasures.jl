@@ -23,9 +23,13 @@ function VaR end
 Compute VaR for a discrete random variable with `values` and the probability mass
 function `pmf`. See `VaR(x̃, α)` for more details. Also compute the index that achieves 
 
+If `α = 0`, VaR returns the essential infimum, and if `α = 1`, VaR returns
+maximum possible value, becuase VaR_1 is infinity.
+
 Runs in ``n \\log(n)`` time where `n = length(x̃)`.
 
-Also returns the value VaR and an index `i` such that `values[i] = x` in the minimization above. If such an index does not exist, then returns -1.
+Also returns the value VaR and an index `i` such that `values[i] = x` in the
+minimization above. If such an index does not exist, then returns -1.
 """
 function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
     check_inputs=true)

@@ -4,8 +4,11 @@ using Distributions
 """
     expectile(x̃, α)
 
-Compute the expectile risk measure of the random variable `x̃` with risk level `α` in (0,1).
-When `α = 1/2`, the function computes the expected value. Notice the range for `α` is non-inclusive.
+Compute the expectile risk measure of the random variable `x̃` with risk level
+`α ∈ (0,1)`. When `α = 1/2`, the function computes the expected value.
+Expectile is only coherent when `α ∈ (0,1/2]`.
+
+Notice the range for `α` does not include `0` or `1`.
 
 The function solves
 ```math

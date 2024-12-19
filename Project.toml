@@ -1,7 +1,7 @@
 name = "RiskMeasures"
 uuid = "b5a8929a-7a15-4aed-937e-21e1a404cbc5"
-authors = ["Marek Petrik <mpetrik@cs.unh.edu> and contributors"]
-version = "0.4.1"
+authors = ["Marek Petrik <mpetrik@cs.unh.edu>, Gersi Doko, and others"]
+version = "0.5.0"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -10,7 +10,7 @@ Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 [compat]
 Optim = "1.7.8"
 Distributions = "0.25"
-julia = "1.9"
+julia = "1.11"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
