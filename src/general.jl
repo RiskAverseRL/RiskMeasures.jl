@@ -37,9 +37,31 @@ function rv2pmf(x̃::DiscreteAffineDistribution)
     # needs to handle location-scale separately because
     # the implementation of the pdf function in Distributions.LocationScale
     # leads to numerrical errors
-    
+
     sp = support(x̃.ρ)
     pmf = pdf.(x̃.ρ, sp)
     sp = @. sp * x̃.σ + x̃.μ
     (sp, pmf)
+end
+
+function swap!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, i::Int, j::Int)
+    @inbounds begin
+        vals[i], vals[j] = vals[j], vals[i]
+        p[i], p[j] = p[j], p[i]
+    end
+end
+
+function lomuto_partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, f::Int, b::Int)
+    pivot = f + Int(ceil((b - f) / 2))
+    pivot_val = vals[pivot]
+    swap!(vals, p, pivot, b)
+    store_index = f
+    @inbounds for i ∈ range(f, b - 1)
+        if vals[i] < pivot_val
+            swap!(vals, p, store_index, i)
+            store_index += 1
+        end
+    end
+    swap!(vals, p, b, store_index)
+    return store_index
 end
