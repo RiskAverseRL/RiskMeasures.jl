@@ -9,7 +9,7 @@ essential infimum (smallest value with positive probability) and `α=0` returns 
 Solves for
 ``\\inf \\{x ∈ \\mathbb{R} : \\mathbb{P}[x̃ ≤ x] > 1-α \\}``
 
-In general, this function is neither convex nor concave.
+In general, this function is neither convex nor concave in the random variable x̃.
 """
 function VaR end
 
@@ -17,7 +17,10 @@ function VaR end
     VaR(values, pmf, α; ...) 
 
 Compute VaR for a discrete random variable with `values` and the probability mass
-function `pmf`. See `VaR(x̃, α)` for more details. Also compute the index that achieves 
+function `pmf`. See `VaR(x̃, α)` for more details. Also compute the index that achieves
+the value at risk. 
+
+
 
 If `α = 0`, VaR returns the essential infimum, and if `α = 1`, VaR returns
 maximum possible value, becuase VaR_1 is infinity.
@@ -30,7 +33,7 @@ minimization above. If such an index does not exist, then returns -1.
 Keyword Arguments:
 - `check_inputs=true`: check that the inputs are valid.
 - `has_duplicates=true`: if `values` has duplicates, pass `false` to speed up the
-  computation if values does not have duplicates. NOTE: values will be mutated.
+  computation if values does not have duplicates. 
 """
 function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
     check_inputs=true, has_duplicates=true)
@@ -46,6 +49,7 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
         return essinf(values, pmf; check_inputs=check_inputs)
     end
 
+    # TODO: should alse quickselect if there are duplicates
     if has_duplicates
         # sort acending
         sortedi = sortperm(values)
@@ -61,6 +65,7 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
         end
         return (value=values[pos], index=pos)
     else # We can quickselect if no duplicates
+        values = copy(values)
         i = 1
         j = length(values)
         @inbounds while j - i >= 1
@@ -70,7 +75,7 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
         end
         return (value=values[i], index=i)
     end
-    return (value=values[1], index=1)
+    #return (value=values[1], index=1)
 end
 
 

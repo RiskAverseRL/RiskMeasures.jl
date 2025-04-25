@@ -24,20 +24,6 @@ More details: <https://en.wikipedia.org/wiki/Expected_shortfall>
 function CVaR end
 
 """
-    CVaR(x̃, α)
-
-Compute the conditional value at risk at level `α` for the random variable `x̃`. Also
-compute the equivalent random variable with the same support but a different distribution.
-
-Returns a named tuple with `value` and the `solution` random variable that solves the robust
-CVaR formulation. That is if `ỹ` is the solution, then the support of `x̃` and `ỹ` are the same
-and  ``\\mathbb{E}[ỹ] = \\operatorname{CVaR}_{α}[x̃]``.
-"""
-function CVaR end
-
-
-
-"""
     CVaR(values, pmf, α; ...) 
 
 Compute CVaR for a discrete random variable with `values` and the probability mass
