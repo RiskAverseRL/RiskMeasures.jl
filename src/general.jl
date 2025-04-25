@@ -51,23 +51,21 @@ function swap!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, i::Int, 
   p[i], p[j] = p[j], p[i]
 end
 
-"""
-
-    partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, f::Int, b::Int)
-
-Function to partition the values in `vals` and `p` between `f` and `b` (inclusive).
-The pivot is chosen from the middle. 
-
-# Returns
-
-A tuple (lt::Int, gt::Int) where `lt` is the index of the start of the eq partition and `gt` is the index of the start of the right partition, the difference between the two  contain values equal to the pivot.
-
-# Examples
-
-  x = [1,2,2,3]
-  partition!(x, 2, 1, 4) # (2, 4)
-
-"""
+#"""
+#    partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, f::Int, b::Int)
+#
+#Function to partition the values in `vals` and `p` between `f` and `b` (inclusive).
+#The pivot is chosen from the middle. 
+#
+## Returns
+#
+#A tuple (lt::Int, gt::Int) where `lt` is the index of the start of the eq partition and `gt` is the index of the start of the right partition, the difference between the two  contain values equal to the pivot#.
+#
+## Examples
+#
+#  x = [1,2,2,3]
+#  partition!(x, 2, 1, 4) # (2, 4)
+#"""
 function partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, f::Int, b::Int)
   pivot_ind = f + Int(ceil((b - f) / 2))
   pivot_val = vals[pivot_ind]
