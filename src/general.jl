@@ -44,24 +44,72 @@ function rv2pmf(x̃::DiscreteAffineDistribution)
     (sp, pmf)
 end
 
+# swaps the elements of vals between 
 function swap!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, i::Int, j::Int)
-    @inbounds begin
-        vals[i], vals[j] = vals[j], vals[i]
-        p[i], p[j] = p[j], p[i]
-    end
+  i == j && return 
+  vals[i], vals[j] = vals[j], vals[i]
+  p[i], p[j] = p[j], p[i]
 end
 
-function lomuto_partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, f::Int, b::Int)
-    pivot = f + Int(ceil((b - f) / 2))
-    pivot_val = vals[pivot]
-    swap!(vals, p, pivot, b)
-    store_index = f
-    @inbounds for i ∈ range(f, b - 1)
-        if vals[i] < pivot_val
-            swap!(vals, p, store_index, i)
-            store_index += 1
-        end
+"""
+
+    partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, f::Int, b::Int)
+
+Function to partition the values in `vals` and `p` between `f` and `b` (inclusive).
+The pivot is chosen from the middle. 
+
+# Returns
+
+A tuple (lt::Int, gt::Int) where `lt` is the index of the start of the eq partition and `gt` is the index of the start of the right partition, the difference between the two  contain values equal to the pivot.
+
+# Examples
+
+  x = [1,2,2,3]
+  partition!(x, 2, 1, 4) # (2, 4)
+
+"""
+function partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, f::Int, b::Int)
+  pivot_ind = f + Int(ceil((b - f) / 2))
+  pivot_val = vals[pivot_ind]
+  lt = f
+  eq = f
+  gt = b
+  @inbounds while eq <= gt
+    if vals[eq] < pivot_val
+      @inbounds swap!(vals, p, eq, lt)
+      lt += 1
+      eq += 1
+    elseif vals[eq] > pivot_val
+      @inbounds swap!(vals, p, eq, gt)
+      gt -= 1
+    else # vals[eq] == pivot_val
+      eq += 1
     end
-    swap!(vals, p, b, store_index)
-    return store_index
+  end
+  return (lt=lt - 1, gt=gt)
+end
+
+
+## Quick Quantile (loopy version)
+function qql!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
+  if iszero(α) # minimum
+    return essinf(vals, p; check_inputs=true)
+  elseif isone(α) # maximum (it is unbounded)
+    return (value=typemax(eltype(p)), index=length(vals))
+  end
+  i = 1
+  j = length(vals)
+  gt = 1
+  # @show i, j
+  @inbounds while j - i >= 1
+    ind, gt = partition!(vals, p, i, j)
+    tail::Float64 = sum(view(p, i:ind))
+    α < tail ? begin
+      j = ind
+    end : begin
+      i = gt
+      α -= tail
+    end # Cut off half of the random variable
+  end
+  return (value=vals[i], index=i)
 end

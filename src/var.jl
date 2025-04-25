@@ -17,8 +17,7 @@ function VaR end
     VaR(values, pmf, α; ...) 
 
 Compute VaR for a discrete random variable with `values` and the probability mass
-function `pmf`. See `VaR(x̃, α)` for more details. Also compute the index that achieves
-the value at risk. 
+function `pmf`.  Also compute the index that achieves the value at risk. 
 
 
 
@@ -27,16 +26,19 @@ maximum possible value, becuase VaR_1 is infinity.
 
 Runs in ``n \\log(n)`` time where `n = length(x̃)`.
 
-Also returns the value VaR and an index `i` such that `values[i] = x` in the
-minimization above. If such an index does not exist, then returns -1.
 
-Keyword Arguments:
+# Returns
+
+A named tuple with VaR `value` and the `index` that achieves it. If such
+an index does not exist, then returns -1.
+
+# Keyword Arguments:
+
 - `check_inputs=true`: check that the inputs are valid.
-- `has_duplicates=true`: if `values` has duplicates, pass `false` to speed up the
-  computation if values does not have duplicates. 
+- `fast=false`: use linear-time experimental implementation 
 """
 function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
-    check_inputs=true, has_duplicates=true)
+    check_inputs=true, fast = false)
 
     _check_α(α)
     check_inputs && _check_pmf(values, pmf)
@@ -49,33 +51,21 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
         return essinf(values, pmf; check_inputs=check_inputs)
     end
 
-    # TODO: should alse quickselect if there are duplicates
-    if has_duplicates
-        # sort acending
-        sortedi = sortperm(values)
-
+    if !fast
+        sortedi = sortperm(values; rev = true) # sort descending
         pos = last(sortedi) # this value is used when the loop does not break
-        p_accum = zero(T)
+        p_accum = one(T)
 
-        α̂ = α - 1e-10  # ...numerical issues
+        α̂ = α 
         # find the index such that the sum of the probabilities is greater than alpha
         @inbounds for i ∈ sortedi
-            p_accum += pmf[i]
-            p_accum >= α̂ && (pos = i; break)
+            p_accum -= pmf[i]
+            p_accum ≤ α̂ && (pos = i; break)
         end
         return (value=values[pos], index=pos)
-    else # We can quickselect if no duplicates
-        values = copy(values)
-        i = 1
-        j = length(values)
-        @inbounds while j - i >= 1
-            ind = lomuto_partition!(values, pmf, i, j) - 1
-            tail::Float64 = sum(view(pmf, 1:ind))
-            α <= tail ? j = ind : i = ind + 1
-        end
-        return (value=values[i], index=i)
+    else 
+        qql!(copy(values), copy(pmf), α)
     end
-    #return (value=values[1], index=1)
 end
 
 

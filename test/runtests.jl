@@ -39,43 +39,43 @@ end
     x̃ = DiscreteNonParametric(X, p)
 
     @test VaR(x̃, 0).value ≈ -1.0
-    @test VaR(x̃, 0, has_duplicates=false).value ≈ -1.0
+    @test VaR(x̃, 0, fast=true).value ≈ -1.0
     @test VaR(x̃, 0.01).value ≈ -1.0
-    @test VaR(x̃, 0.01, has_duplicates=false).value ≈ -1.0
+    @test VaR(x̃, 0.01, fast=true).value ≈ -1.0
     @test VaR(x̃, 1).value ≈ Inf
-    @test VaR(x̃, 1, has_duplicates=false).value ≈ Inf
+    @test VaR(x̃, 1, fast=true).value ≈ Inf
     @test VaR(x̃, 0.5).value ≈ 1.0
-    @test VaR(x̃, 0.5, has_duplicates=false).value ≈ 1.0
+    @test VaR(x̃, 0.5, fast=true).value ≈ 1.0
     @test VaR(x̃, 0.7).value ≈ 2.0
-    @test VaR(x̃, 0.7, has_duplicates=false).value ≈ 2.0
+    @test VaR(x̃, 0.7, fast=true).value ≈ 2.0
 
     p = [0.1, 0.2, 0.3, 0.1, 0.3]
     X = [4.0, 5.0, 1.0, 2.0, -1.0]
     x̃ = DiscreteNonParametric(X, p)
 
     @test VaR(x̃, 0).value ≈ -1.0
-    @test VaR(x̃, 0, has_duplicates=false).value ≈ -1.0
+    @test VaR(x̃, 0, fast=true).value ≈ -1.0
     @test VaR(x̃, 0.01).value ≈ -1.0
-    @test VaR(x̃, 0.01, has_duplicates=false).value ≈ -1.0
+    @test VaR(x̃, 0.01, fast=true).value ≈ -1.0
     @test VaR(x̃, 1).value ≈ Inf
-    @test VaR(x̃, 1, has_duplicates=false).value ≈ Inf
+    @test VaR(x̃, 1, fast=true).value ≈ Inf
     @test VaR(x̃, 0.5).value ≈ 1.0
-    @test VaR(x̃, 0.5, has_duplicates=false).value ≈ 1.0
+    @test VaR(x̃, 0.5, fast=true).value ≈ 1.0
     @test VaR(x̃, 0.7).value ≈ 2.0
-    @test VaR(x̃, 0.7, has_duplicates=false).value ≈ 2.0
+    @test VaR(x̃, 0.7, fast=true).value ≈ 2.0
 
     # Bernoulli distribution
     X = [0.0, 1.0]
     p = [0.5, 0.5]
     x̃ = DiscreteNonParametric(X, p)
-    @test VaR(x̃, 0.5).value ≈ 0.0
-    @test VaR(x̃, 0.5, has_duplicates=false).value ≈ 0.0
+    @test VaR(x̃, 0.5).value ≈ 1.0
+    @test VaR(x̃, 0.5, fast=true).value ≈ 1.0
     @test VaR(x̃, 0.51).value ≈ 1.0
-    @test VaR(x̃, 0.51, has_duplicates=false).value ≈ 1.0
+    @test VaR(x̃, 0.51, fast=true).value ≈ 1.0
     @test VaR(x̃, 0.3).value ≈ 0.0
-    @test VaR(x̃, 0.3, has_duplicates=false).value ≈ 0.0
+    @test VaR(x̃, 0.3, fast=true).value ≈ 0.0
     @test VaR(x̃, 0.7).value ≈ 1.0
-    @test VaR(x̃, 0.7, has_duplicates=false).value ≈ 1.0
+    @test VaR(x̃, 0.7, fast=true).value ≈ 1.0
 end
 
 @testset "VaR/CVaR/EVaR bounds" begin
@@ -84,9 +84,9 @@ end
     x̃ = DiscreteNonParametric(X, p)
 
     @test_throws ErrorException VaR(x̃, -1)
-    @test_throws ErrorException VaR(x̃, -1, has_duplicates=false)
+    @test_throws ErrorException VaR(x̃, -1, fast=true)
     @test_throws ErrorException VaR(x̃, 2)
-    @test_throws ErrorException VaR(x̃, 2, has_duplicates=false)
+    @test_throws ErrorException VaR(x̃, 2, fast=true)
 
     @test_throws ErrorException CVaR(x̃, -1)
     @test_throws ErrorException CVaR(x̃, 2)
@@ -105,29 +105,29 @@ end
     x̃ = DiscreteNonParametric(X, p)
 
     @test VaR(x̃, 0.5).value ≈ median(X)
-    @test VaR(x̃, 0.5, has_duplicates=false).value ≈ median(X)
+    @test VaR(x̃, 0.5, fast=true).value ≈ median(X)
     @test -VaR(-x̃, 0.5).value ≈ median(X)
-    @test -VaR(-x̃, 0.5, has_duplicates=false).value ≈ median(X)
+    @test -VaR(-x̃, 0.5, fast=true).value ≈ median(X)
 
     # must be a bound on the median when it is not
     X = [2.0, 5.0, 6.0, 9.0, 3.0, 1.0]
     p = ones(length(X)) / length(X)
     x̃ = DiscreteNonParametric(X, p)
 
-    @test -VaR(-x̃, 0.5).value ≥ median(X)
-    @test -VaR(-x̃, 0.5, has_duplicates=false).value >= median(X)
-    @test VaR(x̃, 0.5).value ≤ median(X)
-    @test VaR(x̃, 0.5, has_duplicates=false).value <= median(X)
+    @test -VaR(-x̃, 0.50001).value ≤ median(X)
+    @test -VaR(-x̃, 0.50001, fast=true).value ≤ median(X)
+    @test VaR(x̃, 0.50001).value ≥ median(X)
+    @test VaR(x̃, 0.50001, fast=true).value ≥ median(X)
 
     # just test a larger version
     X = collect(-30:30)
     p = ones(length(X)) / length(X)
     x̃ = DiscreteNonParametric(X, p)
 
-    @test VaR(x̃, 0.5).value ≈ median(X)
-    @test VaR(x̃, 0.5, has_duplicates=false).value ≈ median(X)
-    @test -VaR(-x̃, 0.5).value ≈ median(X)
-    @test -VaR(-x̃, 0.5, has_duplicates=false).value ≈ median(X)
+    @test VaR(x̃, 0.500001).value ≈ median(X)
+    @test VaR(x̃, 0.500001, fast=true).value ≈ median(X)
+    @test -VaR(-x̃, 0.5000001).value ≈ median(X)
+    @test -VaR(-x̃, 0.5000001, fast=true).value ≈ median(X)
 end
 
 @testset "CVaR" begin
@@ -136,20 +136,30 @@ end
     x̃ = DiscreteNonParametric(X, p)
 
     @test CVaR(x̃, 0).value ≈ -1.0
+    @test CVaR(x̃, 0, fast=true).value ≈ -1.0
     @test CVaR(x̃, 0.01).value ≈ -1.0
+    @test CVaR(x̃, 0.01, fast = true).value ≈ -1.0
     @test CVaR(x̃, 1).value ≈ 1.6
+    @test CVaR(x̃, 1, fast=true).value ≈ 1.6
     @test CVaR(x̃, 0.5).value ≈ -0.2
+    @test CVaR(x̃, 0.5, fast=true).value ≈ -0.2
     @test CVaR(x̃, 0.6).value ≈ 0.0
+    @test CVaR(x̃, 0.6, fast=true).value ≈ 0.0
 
     p = [0.1, 0.2, 0.3, 0.1, 0.3]
     X = [4.0, 5.0, 1.0, 2.0, -1.0]
     x̃ = DiscreteNonParametric(X, p)
 
     @test CVaR(x̃, 0).value ≈ -1.0
+    @test CVaR(x̃, 0; fast = true).value ≈ -1.0
     @test CVaR(x̃, 0.00).value ≈ -1.0
+    @test CVaR(x̃, 0.00; fast=true).value ≈ -1.0
     @test CVaR(x̃, 1).value ≈ 1.6
+    @test CVaR(x̃, 1, fast=true).value ≈ 1.6
     @test CVaR(x̃, 0.5).value ≈ -0.2
+    @test CVaR(x̃, 0.5, fast=true).value ≈ -0.2
     @test CVaR(x̃, 0.6).value ≈ 0
+    @test CVaR(x̃, 0.6, fast = true).value ≈ 0
 end
 
 @testset "Risk measures order" begin
@@ -164,7 +174,7 @@ end
 
         @test EVaR(x̃, α; βmax=60).value ≤ CVaR(x̃, α).value
         @test CVaR(x̃, α).value ≤ VaR(x̃, α).value
-        @test CVaR(x̃, α).value ≤ VaR(x̃, α, has_duplicates=false).value
+        @test CVaR(x̃, α).value ≤ VaR(x̃, α, fast=true).value
         @test CVaR(x̃, α).value ≤ mean(x̃)
     end
 end
@@ -177,7 +187,7 @@ end
     for α ∈ range(0.0, 1.0, 7)
         for c ∈ range(-10.0, 10.0, 6)
             @test VaR(x̃ + c, α).value - c ≈ VaR(x̃, α).value
-            @test VaR(x̃ + c, α, has_duplicates=false).value - c ≈ VaR(x̃, α, has_duplicates=false).value
+            @test VaR(x̃ + c, α, fast=true).value - c ≈ VaR(x̃, α, fast=true).value
             @test CVaR(x̃ + c, α).value - c ≈ CVaR(x̃, α).value
             @test EVaR(x̃ + c, α).value - c ≈ EVaR(x̃, α).value
             if zero(α) < α < one(α) * 0.5
@@ -195,7 +205,7 @@ end
     for α ∈ range(0.0, 1.0, 5)
         for c ∈ range(0.1, 10.0, 6)
             @test ≈(VaR(x̃ * c, α).value, c * VaR(x̃, α).value, atol=1e-5, rtol=0.01)
-            @test ≈(VaR(x̃ * c, α, has_duplicates=false).value, c * VaR(x̃, α, has_duplicates=false).value, atol=1e-5, rtol=0.01)
+            @test ≈(VaR(x̃ * c, α, fast=true).value, c * VaR(x̃, α, fast=true).value, atol=1e-5, rtol=0.01)
             @test ≈(CVaR(x̃ * c, α).value, c * CVaR(x̃, α).value, atol=1e-5, rtol=0.01)
             @test ≈(EVaR(x̃ * c, α).value, c * EVaR(x̃, α).value, atol=1e-5, rtol=0.01)
             @test ≈(expectile(x̃ * c, α, check_inputs=false).value, c * expectile(x̃, α, check_inputs=false).value, atol=1e-5, rtol=0.01)
@@ -212,7 +222,7 @@ end
         for c ∈ range(-10.0, 10.0, 6)
             for a ∈ range(0.1, 10.0, 6)
                 @test ≈(VaR(x̃ * a + c, α).value, a * VaR(x̃, α).value + c, atol=1e-5, rtol=0.001)
-                @test ≈(VaR(x̃ * a + c, α, has_duplicates=false).value, a * VaR(x̃, α, has_duplicates=false).value + c, atol=1e-5, rtol=0.001)
+                @test ≈(VaR(x̃ * a + c, α, fast=true).value, a * VaR(x̃, α, fast=true).value + c, atol=1e-5, rtol=0.001)
                 @test ≈(CVaR(x̃ * a + c, α).value, a * CVaR(x̃, α).value + c, atol=1e-5, rtol=0.001)
                 @test ≈(EVaR(x̃ * a + c, α).value, a * EVaR(x̃, α).value + c, atol=1e-5, rtol=0.001)
             end
@@ -246,7 +256,7 @@ end
         @test e.value ≈ mean(e.pmf)
         v = VaR(x̃, α)
         @test v.value ≈ mean(v.pmf)
-        v = VaR(x̃, α, has_duplicates=false)
+        v = VaR(x̃, α, fast=true)
         @test v.value ≈ mean(v.pmf)
     end
 end

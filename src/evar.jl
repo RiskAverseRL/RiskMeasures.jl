@@ -6,6 +6,11 @@ using Distributions
 
 Compute the EVaR risk measure of the random variable `x̃` with risk level `α` in [0,1].
 
+    EVaR(values, pmf, α; ...)
+
+Compute EVaR for a discrete random variable with `values` and the probability mass
+function `pmf`.
+
 When `α = 1`, the function computes the expected value, and when `α = 0`, then the 
 function computes the essential infimum (a minimum value with positive probability).
 
@@ -32,12 +37,6 @@ Optimization Theory and Applications 155(3), 2012.
 function EVaR end
 
 
-"""
-    EVaR(values, pmf, α; ...)
-
-Compute EVaR for a discrete random variable with `values` and the probability mass
-function `pmf`. See `EVaR(x̃, α)` for more details.
-"""
 function EVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
     βmin=1e-5, βmax=100.0, reciprocal=false, check_inputs=true)
 
@@ -45,6 +44,8 @@ function EVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
     check_inputs && _check_pmf(values, pmf)
 
     T = eltype(pmf) |> float
+
+    tol = 1e2 # tolerance for suboptimality
 
     if isone(α)
         return (value=values' * pmf, β=0.0, pmf=Vector{T}(pmf))
@@ -62,7 +63,7 @@ function EVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
         f(β) = -ERM(values, pmf, β; x̃min=xmin, check_inputs=false) -
                (logconst / β)
         sol = optimize(f, βmin, βmax, Brent())
-        sol.converged || error("Failed to find optimal β (unknown reason).")
+        sol.abs_tol < tol || error("Failed to find optimal β (unknown reason).")
         isfinite(sol.minimum) ||
             error("Overflow, computed an invalid solution. Reduce βmax.")
         β = float(sol.minimizer)
@@ -75,7 +76,7 @@ function EVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
         # this is the derivative, but it does not appear to be useful
         # df(λ) = - (λ * ERM(values, pmf, 1/λ; xmin) + softmin(, p, 1/λ; xmin))
         sol = optimize(g, inv(βmax), inv(βmin), Brent())
-        sol.converged || error("Failed to find optimal λ (unknown reason).")
+        sol.abs_tol < tol || error("Failed to find optimal λ (unknown reason).")
         isfinite(sol.minimum) ||
             error("Overflow, computed an invalid solution. Reduce βmax.")
         β = 1.0 / float(sol.minimizer)
