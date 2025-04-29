@@ -11,10 +11,10 @@ function _check_pmf(pmf::AbstractVector{<:Real})
     T = eltype(pmf)
     !isempty(pmf) || _bad_distribution("pmf must be non-empty.")
     mapreduce(isfinite, &, pmf) || _bad_distribution("Probabilities must be finite.")
-    mapreduce(x -> x ≥ zero(T), &, pmf) ||
-        _bad_distribution("Probabilities must be non-negative.")
-    sum(pmf) ≈ one(T) ||
-        _bad_distribution("Probabilities must sum to 1 and not $(sum(pmf)).")
+    for element ∈ pmf
+      element >= zero(T) || _bad_distribution("Probabilities must be non-negative.")
+    end
+    sum(pmf) ≈ one(T) || _bad_distribution("Probabilities must sum to 1 and not $(sum(pmf)).")
 end
 
 function _check_pmf(support::AbstractVector{<:Real}, pmf::AbstractVector{<:Real})
