@@ -54,13 +54,12 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
     if !fast
         sortedi = sortperm(values; rev = true) # sort descending
         pos = last(sortedi) # this value is used when the loop does not break
-        p_accum = one(T)
+        p_right = one(T)
 
-        α̂ = α 
         # find the index such that the sum of the probabilities is greater than alpha
         @inbounds for i ∈ sortedi
-            p_accum -= pmf[i]
-            p_accum ≤ α̂ && (pos = i; break)
+            p_right -= pmf[i]
+            p_right ≤ α && (pos = i; break)
         end
         return (value=values[pos], index=pos)
     else 
