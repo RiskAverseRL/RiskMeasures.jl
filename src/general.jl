@@ -111,6 +111,7 @@ function qql!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
         if α < t  # α < P[x̃ < v] ==> α < 1 - P[x̃ ≥ v] ==> P[x̃ ≥ v] < 1 - α
             # v or greater value cannot be a quantile
             b = l-1
+        # NOTE: this case is subsumed by the next one
         # Would be used for quantile, not for quatile+
         #elseif t + e < α  # P[x̃ ≤ v] < α  
         #    # v or smaller cannot be a quantile
