@@ -98,6 +98,7 @@ function qql!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
     elseif isone(α) # maximum (it is unbounded)
         return (value=typemax(eltype(p)), index=length(vals))
     end
+    
     f = 1
     b = length(vals)
     g = 1
