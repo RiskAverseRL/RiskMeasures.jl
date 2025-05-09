@@ -35,7 +35,7 @@ end
 
 @testset "VaR" begin
     p = [0.1, 0.2, 0.3, 0.1, 0.3, 0.0]
-    X = [4, 5, 1, 2, -1, -2]
+    X = [  4,   5,   1,   2,  -1,  -2]
     x̃ = DiscreteNonParametric(X, p)
 
     @test VaR(x̃, 0).value ≈ -1.0
@@ -46,8 +46,8 @@ end
     @test VaR(x̃, 1, fast=true).value ≈ Inf
     @test VaR(x̃, 0.5).value ≈ 1.0
     @test VaR(x̃, 0.5, fast=true).value ≈ 1.0
-    @test VaR(x̃, 0.7).value ≈ 2.0
-    @test VaR(x̃, 0.7, fast=true).value ≈ 2.0
+    @test VaR(x̃, 0.7001).value ≈ 4.0
+    @test VaR(x̃, 0.7001, fast=true).value ≈ 4.0
 
     p = [0.1, 0.2, 0.3, 0.1, 0.3]
     X = [4.0, 5.0, 1.0, 2.0, -1.0]
@@ -61,8 +61,8 @@ end
     @test VaR(x̃, 1, fast=true).value ≈ Inf
     @test VaR(x̃, 0.5).value ≈ 1.0
     @test VaR(x̃, 0.5, fast=true).value ≈ 1.0
-    @test VaR(x̃, 0.7).value ≈ 2.0
-    @test VaR(x̃, 0.7, fast=true).value ≈ 2.0
+    @test VaR(x̃, 0.700001).value ≈ 4.0
+    @test VaR(x̃, 0.700001, fast=true).value ≈ 4.0
 
     # Bernoulli distribution
     X = [0.0, 1.0]

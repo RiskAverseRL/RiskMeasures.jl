@@ -59,55 +59,75 @@ end
 #
 ## Returns
 #
-#A tuple (lt::Int, gt::Int) where `lt` is the index of the start of the eq partition and `gt` is the index of the start of the right partition, the difference between the two  contain values equal to the pivot#.
+#A tuple (lt::Int, gt::Int) where `lt` is the index of the start of the eq partition and `gt` is the index of end of the eq partition, the range between them includes values equal to the pivot.
 #
 ## Examples
 #
 #  x = [1,2,2,3]
 #  partition!(x, 2, 1, 4) # (2, 4)
 #"""
-function partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, f::Int, b::Int)
-  pivot_ind = f + Int(ceil((b - f) / 2))
-  pivot_val = vals[pivot_ind]
-  lt = f
-  eq = f
-  gt = b
-  @inbounds while eq <= gt
-    if vals[eq] < pivot_val
-      @inbounds swap!(vals, p, eq, lt)
-      lt += 1
-      eq += 1
-    elseif vals[eq] > pivot_val
-      @inbounds swap!(vals, p, eq, gt)
-      gt -= 1
-    else # vals[eq] == pivot_val
-      eq += 1
+function partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, pivot_val :: Real,
+                    f::Int, b::Int)
+
+    #pivot_ind = f + Int(ceil((b - f) / 2))
+    #pivot_val = vals[pivot_ind]
+    lt = f
+    eq = f
+    gt = b
+    @inbounds while eq <= gt
+        if vals[eq] < pivot_val
+            @inbounds swap!(vals, p, eq, lt)
+            lt += 1
+            eq += 1
+        elseif vals[eq] > pivot_val
+            @inbounds swap!(vals, p, eq, gt)
+            gt -= 1
+        else # vals[eq] == pivot_val
+            eq += 1
+        end
     end
-  end
-  return (lt=lt - 1, gt=gt)
+    return (lt=lt, gt=gt)
 end
 
 
 ## Quick Quantile (loopy version)
+## NOTE: computes q+ = upper bound on the quantile function
 function qql!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
-  if iszero(α) # minimum
-    return essinf(vals, p; check_inputs=true)
-  elseif isone(α) # maximum (it is unbounded)
-    return (value=typemax(eltype(p)), index=length(vals))
-  end
-  i = 1
-  j = length(vals)
-  gt = 1
-  # @show i, j
-  @inbounds while j - i >= 1
-    ind, gt = partition!(vals, p, i, j)
-    tail::Float64 = sum(view(p, i:ind))
-    α < tail ? begin
-      j = ind
-    end : begin
-      i = gt
-      α -= tail
-    end # Cut off half of the random variable
-  end
-  return (value=vals[i], index=i)
+    if iszero(α) # minimum
+        return essinf(vals, p; check_inputs=true)
+    elseif isone(α) # maximum (it is unbounded)
+        return (value=typemax(eltype(p)), index=length(vals))
+    end
+    f = 1
+    b = length(vals)
+    g = 1
+    @inbounds while b - f ≥ 1
+        pivot_ind = f + Int(ceil((b - f) / 2))
+        v = vals[pivot_ind]
+        
+        l, g = partition!(vals, p, v, f, b)
+        t = sum(view(p, f:(l-1)))  # P[x < v]
+        e = sum(view(p, l:g))      # P[x = v]
+        if α < t  # α < P[x̃ < v] ==> α < 1 - P[x̃ ≥ v] ==> P[x̃ ≥ v] < 1 - α
+            # v or greater value cannot be a quantile
+            b = l-1
+        # Would be used for quantile, not for quatile+
+        #elseif t + e < α  # P[x̃ ≤ v] < α  
+        #    # v or smaller cannot be a quantile
+        #    f = g + 1
+        #    α -= t + e
+        elseif t + e ≤ α  # P[x̃ ≤ v] ≤ α <=> P[x̃ > v] = (1 - P[x̃ ≤ v]) ≥ 1-α 
+            # v or smaller cannot be a quantile+ because v + ϵ also satisfies
+            # NOTE: quantile+ only case, remove for quantile
+            f = g + 1
+            α -= t + e
+        else
+            # α ≥ P[x̃ < v] and P[x̃ ≤ v] ≥ α and P[x̃ ≤ v] > α
+            # => α ≥ 1 - P[x̃ ≥ v] and P[x̃ ≤ v] ≥ α and (1 - P[x̃ > v]) > α
+            # => P[x̃ ≥ v] ≥ 1 - α and P[x̃ ≤ v] ≥ α and P[x̃ > v] < 1-α
+            # hence v is a quantile+, since it is a quantile and cannot be greater
+            f = b = g
+        end 
+    end
+    return (value=vals[f], index=f)
 end
