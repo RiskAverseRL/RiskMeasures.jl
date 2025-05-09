@@ -161,6 +161,49 @@ end
     @test VaR(x1, p1, 0.4, fast=true).index ≈ 1
 end
 
+@testset "VaR duplicates" begin
+
+    x1 = [1, 2, 2, 3]
+    p = [1 / 4, 1 / 4, 1 / 4, 1 / 4]
+    @test VaR(x1, p, 0.5, fast=false).value ≈ 2
+    @test VaR(x1, p, 0.5, fast=true).value ≈ 2
+    
+    x1 = [3, 2, 2, 1]
+    p = [1 / 4, 1 / 4, 1 / 4, 1 / 4]
+    @test VaR(x1, p, 0.5, fast=false).value ≈ 2
+    @test VaR(x1, p, 0.5, fast=true).value ≈ 2
+    
+    x1 = [1, 2, 2, 1]
+    p = [1 / 4, 1 / 4, 1 / 4, 1 / 4]
+    @test VaR(x1, p, 0.5, fast=false).value ≈ 2
+    @test VaR(x1, p, 0.5, fast=true).value ≈ 2
+    
+    x1 = [1, 1, 1, 1]
+    p = [1 / 4, 1 / 4, 1 / 4, 1 / 4]
+    @test VaR(x1, p, 0.5, fast=false).value ≈ 1
+    @test VaR(x1, p, 0.5, fast=true).value ≈ 1
+    
+    x1 = [1]
+    p = [1.0]
+    @test VaR(x1, p, 0.5, fast=false).value ≈ 1
+    @test VaR(x1, p, 0.5, fast=true).value ≈ 1
+    
+    #=
+    x1 = [4, 5, 1, 1, 2, -1, -2]
+    p = [0.1, 0.2, 0.2, 0.1, 0.1, 0.3, 0.0]
+    
+    @test CVaR(x1, p, 0.0).value ≈ -1.0
+    @test qCVaR!(x1, p, 0.0).value ≈ -1.0
+    @test CVaR(x1, p, 0.01).value ≈ -1.0
+    @test qCVaR!(x1, p, 0.01).value ≈ -1.0
+    @test CVaR(x1, p, 1).value ≈ 1.6
+    @test qCVaR!(x1, p, 1).value ≈ 1.6
+    @test CVaR(x1, p, 0.5).value ≈ -0.2
+    @test qCVaR!(x1, p, 0.5).value ≈ -0.2
+    @test CVaR(x1, p, 0.6).value ≈ 0.0
+    @test qCVaR!(x1, p, 0.6).value ≈ 0.0
+    =#
+end
 
 @testset "VaR/CVaR/EVaR bounds" begin
     X = [2.0, 5.0, 6.0, 9.0, 3.0, 1.0]
