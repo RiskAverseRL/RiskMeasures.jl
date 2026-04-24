@@ -2,7 +2,7 @@ import Optim: optimize, Brent, BFGS
 using Distributions
 
 """
-    EVaR(x̃, α; βmin = 1e-5, βmax = 100, reciprocal = false, distribution = false)
+    EVaR(x̃, α; βmin = 1e-5, βmax = 100, reciprocal = false, check_inputs = true)
 
 Compute the EVaR risk measure of the random variable `x̃` with risk level `α` in [0,1].
 

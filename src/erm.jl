@@ -1,7 +1,7 @@
 using Distributions
 
 """
-    ERM(x̃, β [, x̃min, check_inputs = true])
+    ERM(x̃, β; x̃min = -Inf, check_inputs = true)
 
 Compute the entropic risk measure of the random variable `x̃` with risk level `β`. 
 
@@ -39,7 +39,7 @@ end
 ERM(x̃, β::Real; kwargs...) = ERM(rv2pmf(x̃)..., β; kwargs...)
 
 """
-    softmin(x̃, β; x̃min check_inputs = true)
+    softmin(x̃, β; x̃min = -Inf, check_inputs = true)
 
 Compute a weighted softmin function for random variable `x̃` with risk level `β`. 
 This can be seen as an approximation of the arg min function and not the min function.

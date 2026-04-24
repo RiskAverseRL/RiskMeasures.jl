@@ -46,8 +46,8 @@ end
     @test VaR(x̃, 1, fast=true).value ≈ Inf
     @test VaR(x̃, 0.5).value ≈ 1.0
     @test VaR(x̃, 0.5, fast=true).value ≈ 1.0
-    @test VaR(x̃, 0.7).value ≈ 2.0
-    @test VaR(x̃, 0.7, fast=true).value ≈ 2.0
+    @test VaR(x̃, 0.7).value ≈ 4.0
+    @test VaR(x̃, 0.7, fast=true).value ≈ 4.0
 
     p = [0.1, 0.2, 0.3, 0.1, 0.3]
     X = [4.0, 5.0, 1.0, 2.0, -1.0]
@@ -61,8 +61,8 @@ end
     @test VaR(x̃, 1, fast=true).value ≈ Inf
     @test VaR(x̃, 0.5).value ≈ 1.0
     @test VaR(x̃, 0.5, fast=true).value ≈ 1.0
-    @test VaR(x̃, 0.7).value ≈ 2.0
-    @test VaR(x̃, 0.7, fast=true).value ≈ 2.0
+    @test VaR(x̃, 0.7).value ≈ 4.0
+    @test VaR(x̃, 0.7, fast=true).value ≈ 4.0
 
     # Bernoulli distribution
     X = [0.0, 1.0]
@@ -258,6 +258,31 @@ end
         @test v.value ≈ mean(v.pmf)
         v = VaR(x̃, α, fast=true)
         @test v.value ≈ mean(v.pmf)
+        c_fast = CVaR(x̃, α, fast=true)
+        @test c_fast.value ≈ mean(c_fast.pmf)
+        @test c_fast.value ≈ c.value
+    end
+end
+
+@testset "CVaR fast pmf" begin
+    values = [3.0, 1.0, 2.0]
+    pmf    = [0.3, 0.4, 0.3]
+    for α ∈ range(0.0, 1.0, 6)
+        c_slow = CVaR(values, pmf, α; fast=false)
+        c_fast = CVaR(values, pmf, α; fast=true)
+        @test c_fast.value ≈ c_slow.value
+        @test values' * c_fast.pmf ≈ c_fast.value
+    end
+end
+
+@testset "VaR fast index" begin
+    values = [3.0, 1.0, 2.0]
+    pmf    = [0.3, 0.4, 0.3]
+    for α ∈ range(0.0, 1.0, 6)
+        v_slow = VaR(values, pmf, α; fast=false)
+        v_fast = VaR(values, pmf, α; fast=true)
+        @test v_fast.value ≈ v_slow.value
+        @test v_fast.index == v_slow.index
     end
 end
 

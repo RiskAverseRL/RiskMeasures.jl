@@ -3,8 +3,8 @@
 
 Compute the value at risk at risk level `α` for the random variable `x̃`.
 
-Risk must satisfy ``α ∈ [0,1]`` and `α=0.5` computes the median and `α=1` computes the 
-essential infimum (smallest value with positive probability) and `α=0` returns infinity.
+Risk must satisfy ``α ∈ [0,1]`` and `α=0.5` computes the median and `α=0` computes the
+essential infimum (smallest value with positive probability) and `α=1` returns infinity.
 
 Solves for
 ``\\inf \\{x ∈ \\mathbb{R} : \\mathbb{P}[x̃ ≤ x] > 1-α \\}``
@@ -22,10 +22,9 @@ function `pmf`.  Also compute the index that achieves the value at risk.
 
 
 If `α = 0`, VaR returns the essential infimum, and if `α = 1`, VaR returns
-maximum possible value, becuase VaR_1 is infinity.
+maximum possible value, because VaR_1 is infinity.
 
 Runs in ``n \\log(n)`` time where `n = length(x̃)`.
-
 
 # Returns
 
@@ -35,21 +34,18 @@ an index does not exist, then returns -1.
 # Keyword Arguments:
 
 - `check_inputs=true`: check that the inputs are valid.
-- `fast=false`: use linear-time experimental implementation 
+- `fast=true`: use linear-time experimental implementation
 """
 function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
-    check_inputs=true, fast = false)
+    check_inputs=true, fast = true)
 
     _check_α(α)
     check_inputs && _check_pmf(values, pmf)
 
     T = eltype(pmf)
     # special cases
-    if isone(α) # unbounded value
-        return (value=typemax(T), index=-1)
-    elseif iszero(α) # maximum (it is unbounded)
-        return essinf(values, pmf; check_inputs=check_inputs)
-    end
+    isone(α) && return (value=typemax(T), index=-1)
+    iszero(α) && return essinf(values, pmf; check_inputs=check_inputs)
 
     if !fast
         sortedi = sortperm(values; rev = true) # sort descending
@@ -64,7 +60,8 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
         end
         return (value=values[pos], index=pos)
     else 
-        qql!(copy(values), copy(pmf), α)
+        qv = qql!(copy(values), copy(pmf), α)
+        (value=qv.value, index=findfirst(x->x==qv.value, values))
     end
 end
 

@@ -2,27 +2,26 @@ using Distributions
 
 # linear-time implementation of CVaR
 function qCVaR!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
-  T = eltype(p)
-  q, qind = qql!(vals, p, α)
-
-  # From here on: α ∈ (0,1)
-  value = zero(T)           # CVaR value
-  pc = zeros(T, length(p))  # this is the new distribution
-  p_left = one(T)           # probabilities left for allocation
-  α̂ = α                     # probabilities to allocate
-
-  @inbounds for i ∈ 1:qind
-      # if vals[i] <= q # all elements up to qind are less than or equal to q
-      # by def of partition!
-    # update index's probability and probability left to sum to 1.0
-    increment = min(p[i] / α̂, p_left)
-    pc[i] = increment
-    value += increment * vals[i]
-    p_left -= increment
-    p_left ≤ zero(p_left) && break
-    # end
-  end
-  return (value=value, pmf=pc)
+    T = eltype(p)
+    q, _ = qql!(copy(vals), copy(p), α)
+    p_left =  one(T) - sum(p[i] for i in eachindex(p) if vals[i] < q; init=zero(T)) / α
+    @assert p_left ≥ 0
+    pc = zeros(T, length(p))
+    value = zero(T)
+    
+    @inbounds for i in eachindex(vals, p)
+        vals[i] > q && continue
+        if vals[i] < q
+            pc[i]  = p[i] / α
+            value += pc[i] * vals[i]
+        else
+            increment  = min(p[i] / α, p_left)
+            pc[i]      = increment
+            value     += increment * vals[i]
+            p_left    -= increment
+        end
+    end
+    return (value=value, pmf=pc)
 end
 
 """
@@ -35,7 +34,8 @@ Compute the conditional value at risk at level `α` for the random variable `x̃
 Compute CVaR for a discrete random variable with `values` and the probability mass
 function `pmf`. 
 
-The risk level `α` must satisfy the ``α ∈ [0,1]``. Risk aversion descreses with an increasing `α` and, `α = 1` represents the expectation,
+The risk level `α` must satisfy the ``α ∈ [0,1]``. Risk aversion decreases with
+an increasing `α` and `α = 1` represents the expectation,
 `α = 0` computes the essential infimum (smallest value with positive probability).
 
 Assumes a reward maximization setting and solves the dual form

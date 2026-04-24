@@ -51,23 +51,18 @@ function swap!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, i::Int, 
   p[i], p[j] = p[j], p[i]
 end
 
-#"""
-#    partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, f::Int, b::Int)
-#
-#Function to partition the values in `vals` and `p` between `f` and `b` (inclusive).
-#The pivot is chosen from the middle. 
-#
-## Returns
-#
-#A tuple (lt::Int, gt::Int) where `lt` is the index of the start of the eq partition and `gt` is the index of the start of the right partition, the difference between the two  contain values equal to the pivot#.
-#
-## Examples
-#
-#  x = [1,2,2,3]
-#  partition!(x, 2, 1, 4) # (2, 4)
-#"""
-function partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, f::Int, b::Int)
-  pivot_ind = f + Int(ceil((b - f) / 2))
+"""
+    partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, pivot_ind::Int, f::Int, b::Int)
+
+Partition the values in `vals` and `p` between `f` and `b` (inclusive) using the Dutch Flag algorithm
+ into less than pivot, equal to pivot, and greater than pivot. 
+
+# Returns
+
+A tuple (lt, gt) where `i < lt => x[i] < pivot_val` and `i > gr => x[i] > pivot_val`
+and `lt ≤ i ≤ gt => x[i] = pivot_val`, where `pivot_val = vals[pivot_ind]`.
+"""
+function partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, pivot_ind::Int, f::Int, b::Int)
   pivot_val = vals[pivot_ind]
   lt = f
   eq = f
@@ -84,30 +79,31 @@ function partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, f::
       eq += 1
     end
   end
-  return (lt=lt - 1, gt=gt)
+  return (lt=lt, gt=gt)
 end
 
 
-## Quick Quantile (loopy version)
+"""
+    qql!(vals, p, α)
+
+Linear time computation of VaR
+"""
 function qql!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
-  if iszero(α) # minimum
-    return essinf(vals, p; check_inputs=true)
-  elseif isone(α) # maximum (it is unbounded)
-    return (value=typemax(eltype(p)), index=length(vals))
+  f = 1
+  b = length(vals)
+  @inbounds while b - f ≥ 1
+    pivot_ind = f + Int(ceil((b - f) / 2))
+    l, g = partition!(vals, p, pivot_ind, f, b)
+    t = sum(view(p, f:(l-1)))
+    e = sum(view(p, l:g))
+    if α < t   
+      b = l - 1
+    elseif t + e ≤ α
+      f = g + 1
+      α -= t + e
+    else
+      f = b = g
+    end
   end
-  i = 1
-  j = length(vals)
-  gt = 1
-  # @show i, j
-  @inbounds while j - i >= 1
-    ind, gt = partition!(vals, p, i, j)
-    tail::Float64 = sum(view(p, i:ind))
-    α < tail ? begin
-      j = ind
-    end : begin
-      i = gt
-      α -= tail
-    end # Cut off half of the random variable
-  end
-  return (value=vals[i], index=i)
+  return (value=vals[b], index=b)
 end

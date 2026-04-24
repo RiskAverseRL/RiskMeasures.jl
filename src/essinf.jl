@@ -1,5 +1,5 @@
 """
-    essinf(x̃; distribution = false)
+    essinf(x̃)
 
 Compute the essential infimum of the random variable `x̃`, which is the minimum
 value with positive probability
@@ -25,7 +25,7 @@ function essinf(values::AbstractVector{Tval}, pmf::AbstractVector{<:Real};
 
     @inbounds for i ∈ eachindex(values, pmf)
         (!iszero(pmf[i]) && values[i] < minval) &&
-            (minval = float(values[i]); minindex = i)
+            (minval = values[i]; minindex = i)
     end
 
     (value = minval, index = minindex)
@@ -33,4 +33,4 @@ end
 
 
 essinf(x̃; kwargs...) =
-    essinf_d(rv2pmf(x̃)...; kwargs...).value
+    essinf(rv2pmf(x̃)...; kwargs...).value
