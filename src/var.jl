@@ -7,7 +7,7 @@ Risk must satisfy ``α ∈ [0,1]`` and `α=0.5` computes the median and `α=0` c
 essential infimum (smallest value with positive probability) and `α=1` returns infinity.
 
 Solves for
-``\\inf \\{x ∈ \\mathbb{R} : \\mathbb{P}[x̃ ≤ x] > 1-α \\}``
+``\\sup \\{t ∈ \\mathbb{R} : \\mathbb{P}[x̃ < t] \\le α \\}``
 
 In general, this function is neither convex nor concave in the random variable x̃.
 """
@@ -18,8 +18,6 @@ function VaR end
 
 Compute VaR for a discrete random variable with `values` and the probability mass
 function `pmf`.  Also compute the index that achieves the value at risk. 
-
-
 
 If `α = 0`, VaR returns the essential infimum, and if `α = 1`, VaR returns
 maximum possible value, because VaR_1 is infinity.

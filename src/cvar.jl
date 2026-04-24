@@ -5,7 +5,9 @@ function qCVaR!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Rea
     T = eltype(p)
     q, _ = qql!(copy(vals), copy(p), α)
     p_left =  one(T) - sum(p[i] for i in eachindex(p) if vals[i] < q; init=zero(T)) / α
-    @assert p_left ≥ 0
+
+    p_left ≥ 0 || error("CVaR internal error: negative remaining probability")
+
     pc = zeros(T, length(p))
     value = zero(T)
     
