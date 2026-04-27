@@ -7,7 +7,7 @@ Risk must satisfy ``α ∈ [0,1]`` and `α=0.5` computes the median and `α=0` c
 essential infimum (smallest value with positive probability) and `α=1` returns infinity.
 
 Solves for
-``\\sup \\{t ∈ \\mathbb{R} : \\mathbb{P}[x̃ < t] \\le α \\}``
+``\\max \\{t ∈ \\mathbb{R} : \\mathbb{P}[x̃ < t] \\le α \\}``
 
 In general, this function is neither convex nor concave in the random variable x̃.
 """
@@ -27,7 +27,7 @@ Runs in ``n \\log(n)`` time where `n = length(x̃)`.
 # Returns
 
 A named tuple with VaR `value` and the `index` that achieves it. If such
-an index does not exist, then returns -1.
+an index does not exist, when `α = 1`, then returns `index = -1`.
 
 # Keyword Arguments:
 
@@ -40,7 +40,7 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
     _check_α(α)
     check_inputs && _check_pmf(values, pmf)
 
-    T = eltype(pmf)
+    T = float(eltype(values))
     # special cases
     isone(α) && return (value=typemax(T), index=-1)
     iszero(α) && return essinf(values, pmf; check_inputs=check_inputs)
@@ -57,25 +57,28 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
             p_accum ≤ α̂ && (pos = i; break)
         end
         return (value=values[pos], index=pos)
-    else 
+    else
         qv = qql!(copy(values), copy(pmf), α)
-        (value=qv.value, index=findfirst(x->x==qv.value, values))
+        (value=qv.value, index=something(findfirst(==(qv.value), values), -1))
     end
 end
 
 
 function VaR(x̃, α::Real; kwargs...)
     supp, pmf = rv2pmf(x̃)
+
     v1 = VaR(supp, pmf, α; kwargs...)
+
     # construct the equivalent distribution
     Tp = eltype(pmf)
     Ts = eltype(supp)
-    if v1.index > 0
+
+    if v1.index > 0 # when VaR exists
         vpmf = zeros(Tp, length(pmf))
         vpmf[v1.index] = one(Tp)
         ỹ = DiscreteNonParametric(supp, vpmf)
     else # happens then VaR is infinite
-        ỹ = DiscreteNonParametric([typemax(Ts)], [one(Tp)])
+        ỹ = DiscreteNonParametric([typemax(Tp)], [one(Tp)])
     end
 
     (value=v1.value, pmf=ỹ)

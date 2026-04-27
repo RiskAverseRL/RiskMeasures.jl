@@ -43,7 +43,7 @@ function EVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
     check_inputs && _check_α(α)
     check_inputs && _check_pmf(values, pmf)
 
-    T = eltype(pmf) |> float
+    T = float(eltype(pmf))
 
     tol = 1e2 # tolerance for suboptimality
 
@@ -53,7 +53,7 @@ function EVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
         minval = essinf(values, pmf; check_inputs=false)
         minpmf = zeros(T, length(pmf))
         minpmf[minval.index] = one(T)
-        return (value=minval.value, β=Inf, pmf=minpmf)
+        return (value=T(minval.value), β=T(Inf), pmf=minpmf)
     end
 
     xmin = minimum(values)
@@ -71,8 +71,9 @@ function EVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
         return (value=-float(sol.minimum), β=β,
             pmf=softmin(values, pmf, β; x̃min=xmin, check_inputs=false))
     else
+        logconst = log(α)
         g(λ) = -(ERM(values, pmf, 1 / λ; x̃min=xmin, check_inputs=false) +
-                 λ * log(α))
+                 λ * logconst)
         # this is the derivative, but it does not appear to be useful
         # df(λ) = - (λ * ERM(values, pmf, 1/λ; xmin) + softmin(, p, 1/λ; xmin))
         sol = optimize(g, inv(βmax), inv(βmin), Brent())

@@ -1,6 +1,5 @@
 using Distributions: DiscreteNonParametric, DiscreteAffineDistribution
 
-
 _bad_risk(msg::AbstractString) =
     error(msg)
 _bad_distribution(msg::AbstractString) =
@@ -46,16 +45,18 @@ end
 
 # swaps the elements of vals between 
 function swap!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, i::Int, j::Int)
-  i == j && return 
-  vals[i], vals[j] = vals[j], vals[i]
-  p[i], p[j] = p[j], p[i]
+    if i != j
+        vals[i], vals[j] = vals[j], vals[i]
+        p[i], p[j] = p[j], p[i]
+    end
+    return nothing
 end
 
 """
     partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, pivot_ind::Int, f::Int, b::Int)
 
-Partition the values in `vals` and `p` between `f` and `b` (inclusive) using the Dutch Flag algorithm
- into less than pivot, equal to pivot, and greater than pivot. 
+Partition the values in `vals` and `p` between `f` and `b` (inclusive) using the
+Dutch Flag algorithm into less than pivot, equal to pivot, and greater than pivot. 
 
 # Returns
 
@@ -63,47 +64,58 @@ A tuple (lt, gt) where `i < lt => x[i] < pivot_val` and `i > gr => x[i] > pivot_
 and `lt ≤ i ≤ gt => x[i] = pivot_val`, where `pivot_val = vals[pivot_ind]`.
 """
 function partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, pivot_ind::Int, f::Int, b::Int)
-  pivot_val = vals[pivot_ind]
-  lt = f
-  eq = f
-  gt = b
-  @inbounds while eq <= gt
-    if vals[eq] < pivot_val
-      @inbounds swap!(vals, p, eq, lt)
-      lt += 1
-      eq += 1
-    elseif vals[eq] > pivot_val
-      @inbounds swap!(vals, p, eq, gt)
-      gt -= 1
-    else # vals[eq] == pivot_val
-      eq += 1
+    pivot_val = vals[pivot_ind]
+    lt = f
+    eq = f
+    gt = b
+    @inbounds while eq <= gt
+        if vals[eq] < pivot_val
+            @inbounds swap!(vals, p, eq, lt)
+            lt += 1
+            eq += 1
+        elseif vals[eq] > pivot_val
+            @inbounds swap!(vals, p, eq, gt)
+            gt -= 1
+        else # vals[eq] == pivot_val
+            eq += 1
+        end
     end
-  end
-  return (lt=lt, gt=gt)
+    return (lt=lt, gt=gt)
 end
-
 
 """
     qql!(vals, p, α)
 
-Linear time computation of VaR
+Comput VaR in expected linear time without performing correctness checks. The runtime
+of the algorithm is randomized but the output value is deterministic. 
+
+The input must satisfy `0 < α < 1` and the distribution and random variable must
+have the same lengths.
+
+# Returns
+
+Value of type vals space converted to a float. 
 """
 function qql!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
-  f = 1
-  b = length(vals)
-  @inbounds while b - f ≥ 1
-    pivot_ind = f + Int(ceil((b - f) / 2))
-    l, g = partition!(vals, p, pivot_ind, f, b)
-    t = sum(view(p, f:(l-1)))
-    e = sum(view(p, l:g))
-    if α < t   
-      b = l - 1
-    elseif t + e ≤ α
-      f = g + 1
-      α -= t + e
-    else
-      f = b = g
+    0 < α < 1 || _bad_risk("Violated: 0 < α < 1")
+    length(p) == length(vals) ||
+        _bad_distribution("Violated: length(p) == length(vals)")
+    
+    f = 1
+    b = length(vals)
+    @inbounds while b - f ≥ 1
+        pivot_ind = rand(f:b)
+        l, g = partition!(vals, p, pivot_ind, f, b)
+        t = sum(view(p, f:(l-1)))
+        e = sum(view(p, l:g))
+        if α < t   
+            b = l - 1
+        elseif t + e ≤ α
+            f = g + 1
+            α -= t + e
+        else
+            f = b = g
+        end
     end
-  end
-  return (value=vals[b], index=b)
+    return (value=float(vals[b]), index=b)
 end

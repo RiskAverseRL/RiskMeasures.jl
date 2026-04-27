@@ -11,24 +11,26 @@ function essinf end
 
 Compute the value for a random variable with `values` and the probability mass
 function `pmf`.
-
-See `essinf(x̃)` for more details.
 """
 function essinf(values::AbstractVector{Tval}, pmf::AbstractVector{<:Real};
-                  check_inputs = true) :: @NamedTuple{value::Tval, index::Int} where
-    {Tval <: Real}
+                check_inputs = true) ::
+                    @NamedTuple{value::Tval, index::Int} where {Tval <: Real}
     
     check_inputs && _check_pmf(values, pmf)
+
+    Tout = float(Tval)
     
-    minval = typemax(Tval)
-    minindex = -1
+    minval :: Tout = typemax(Tout)
+    minindex :: Int = -1
 
     @inbounds for i ∈ eachindex(values, pmf)
-        (!iszero(pmf[i]) && values[i] < minval) &&
-            (minval = values[i]; minindex = i)
+        if !iszero(pmf[i]) && values[i] < minval 
+            minval = values[i]
+            minindex = i
+        end
     end
 
-    (value = minval, index = minindex)
+    (value = minval :: Tout, index = minindex)
 end
 
 

@@ -2,7 +2,8 @@ using Distributions
 
 # linear-time implementation of CVaR
 function qCVaR!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
-    T = eltype(p)
+
+    T = float(eltype(vals))
     q, _ = qql!(copy(vals), copy(p), α)
     p_left =  one(T) - sum(p[i] for i in eachindex(p) if vals[i] < q; init=zero(T)) / α
 
@@ -68,7 +69,7 @@ function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
     check_inputs && _check_α(α)
     check_inputs && _check_pmf(values, pmf)
 
-    T = eltype(pmf)
+    T = float(eltype(pmf))
 
     # handle special cases
     if isone(α)
@@ -77,7 +78,7 @@ function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
         minval = essinf(values, pmf; check_inputs=false)
         minpmf = zeros(T, length(pmf))
         minpmf[minval.index] = one(T)
-        return (value=minval.value, pmf=minpmf)
+        return (value=T(minval.value), pmf=minpmf)
     end
 
     if !fast

@@ -25,7 +25,7 @@ function ERM(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, β::Re
     if iszero(β)
         return values' * pmf
     elseif isinf(β) && β > zero(β)
-        return essinf(values, pmf; check_inputs=false).value
+        return float(essinf(values, pmf; check_inputs=false).value)
     end
     # because entropic risk measure is translation equivariant, we can change values
     # so that it is positive. That change makes it less likely that it overflows

@@ -6,12 +6,73 @@ using LinearAlgebra: ones
 using Distributions
 import Random
 
+function putter()
+    values = [-20.0, -4.7, 1.6, 2.8, 5.3, 10.0]
+    pmf = [0.5, 0.05, 0.1, 0.05, 0.1, 0.2]
+    α = 0.5
+
+    EVaR(values, pmf, α, reciprocal=true)
+    EVaR(values, pmf, α, reciprocal=false)
+end
+
+
+function compute_VaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; kwargs...)
+    v      = VaR(x, pmf, α; fast=false, kwargs...)
+    v_fast = VaR(x, pmf, α; fast=true,  kwargs...)
+    @test v.value ≈ v_fast.value
+    @test v.index < 1 ? v_fast.index == v.index == -1 : true
+    @test v.index < 1 || (x[v.index] == v.value == v_fast.value)
+    @test v.index < 1 || (x[v.index] == x[v_fast.index])
+    return v
+end
+
+function compute_VaR(x̃, α; kwargs...)
+    v      = VaR(x̃, α; fast=false, kwargs...)
+    v_fast = VaR(x̃, α; fast=true,  kwargs...)
+    @test v.value ≈ v_fast.value
+    @test v.value ≈ mean(v.pmf) 
+    @test mean(v.pmf) ≈ mean(v_fast.pmf)
+    return v
+end
+
+function compute_CVaR(x̃::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; kwargs...)
+    c      = CVaR(x̃, α; fast=false, kwargs...)
+    c_fast = CVaR(x̃, α; fast=true,  kwargs...)
+    @test c.value ≈ c_fast.value
+    @test mean(c.pmf) ≈ mean(c_fast.pmf)
+    return c
+end
+
+function compute_CVaR(x̃, α; kwargs...)
+    c      = CVaR(x̃, α; fast=false, kwargs...)
+    c_fast = CVaR(x̃, α; fast=true,  kwargs...)
+    @test c.value ≈ c_fast.value
+    @test mean(c.pmf)   ≈ mean(c_fast.pmf)
+    return c
+end
+
+function compute_EVaR(x̃, α; kwargs...)
+    e       = EVaR(x̃, α; reciprocal=false, kwargs...)
+    e_recip = EVaR(x̃, α; reciprocal=true,  kwargs...)
+
+    if !isapprox(e.β, e_recip.β, atol=0.0001)
+        println(x̃, "\t", α)
+    end
+    @test e.value ≈ e_recip.value
+    @test e.β ≈ e_recip.β atol=0.0001
+    return e
+end
+
+function compute_expectile(x̃, α; kwargs...)
+    expectile(x̃, α; kwargs...)
+end
+
 @testset "ERM" begin
     X = [2.0, 5.0, 6.0, 9.0, 3.0, 1.0]
     p = [0.1, 0.1, 0.2, 0.5, 0.1, 0.0]
     x̃ = DiscreteNonParametric(X, p)
 
-    @test isapprox(ERM(x̃, 0.0), ERM(x̃, 1e-5); atol=1e-3)
+    @test ERM(x̃, 0.0) ≈ ERM(x̃, 1e-5) atol=1e-3
     @test ERM(x̃, 0.0) ≈ sum(X .* p)
     @test ERM(x̃, 0) ≥ ERM(x̃, 1) ≥ ERM(x̃, 2.0)
     @test ERM(x̃, Inf) ≈ 2.0
@@ -38,44 +99,43 @@ end
     X = [4, 5, 1, 2, -1, -2]
     x̃ = DiscreteNonParametric(X, p)
 
-    @test VaR(x̃, 0).value ≈ -1.0
-    @test VaR(x̃, 0, fast=true).value ≈ -1.0
-    @test VaR(x̃, 0.01).value ≈ -1.0
-    @test VaR(x̃, 0.01, fast=true).value ≈ -1.0
-    @test VaR(x̃, 1).value ≈ Inf
-    @test VaR(x̃, 1, fast=true).value ≈ Inf
-    @test VaR(x̃, 0.5).value ≈ 1.0
-    @test VaR(x̃, 0.5, fast=true).value ≈ 1.0
-    @test VaR(x̃, 0.7).value ≈ 4.0
-    @test VaR(x̃, 0.7, fast=true).value ≈ 4.0
+    @test compute_VaR(x̃, 0).value    ≈ -1.0
+    @test compute_VaR(x̃, 0.01).value ≈ -1.0
+    @test compute_VaR(x̃, 1).value    ≈ Inf
+    @test compute_VaR(x̃, 0.5).value  ≈ 1.0
+    @test compute_VaR(x̃, 0.701).value  ≈ 4.0
+
+
+    @test compute_VaR(X, p, 0).value    ≈ -1.0
+    @test compute_VaR(X, p, 0.01).value ≈ -1.0
+    @test compute_VaR(X, p, 1).value    ≈ Inf
+    @test compute_VaR(X, p, 0.5).value  ≈ 1.0
+    @test compute_VaR(X, p, 0.701).value  ≈ 4.0
 
     p = [0.1, 0.2, 0.3, 0.1, 0.3]
     X = [4.0, 5.0, 1.0, 2.0, -1.0]
     x̃ = DiscreteNonParametric(X, p)
 
-    @test VaR(x̃, 0).value ≈ -1.0
-    @test VaR(x̃, 0, fast=true).value ≈ -1.0
-    @test VaR(x̃, 0.01).value ≈ -1.0
-    @test VaR(x̃, 0.01, fast=true).value ≈ -1.0
-    @test VaR(x̃, 1).value ≈ Inf
-    @test VaR(x̃, 1, fast=true).value ≈ Inf
-    @test VaR(x̃, 0.5).value ≈ 1.0
-    @test VaR(x̃, 0.5, fast=true).value ≈ 1.0
-    @test VaR(x̃, 0.7).value ≈ 4.0
-    @test VaR(x̃, 0.7, fast=true).value ≈ 4.0
+    @test compute_VaR(x̃, 0).value    ≈ -1.0
+    @test compute_VaR(x̃, 0.01).value ≈ -1.0
+    @test compute_VaR(x̃, 1).value    ≈ Inf
+    @test compute_VaR(x̃, 0.5).value  ≈ 1.0
+    @test compute_VaR(x̃, 0.701).value  ≈ 4.0
+
+    @test compute_VaR(X, p, 0).value    ≈ -1.0
+    @test compute_VaR(X, p, 0.01).value ≈ -1.0
+    @test compute_VaR(X, p, 1).value    ≈ Inf
+    @test compute_VaR(X, p, 0.5).value  ≈ 1.0
+    @test compute_VaR(X, p, 0.701).value  ≈ 4.0
 
     # Bernoulli distribution
     X = [0.0, 1.0]
     p = [0.5, 0.5]
     x̃ = DiscreteNonParametric(X, p)
-    @test VaR(x̃, 0.5).value ≈ 1.0
-    @test VaR(x̃, 0.5, fast=true).value ≈ 1.0
-    @test VaR(x̃, 0.51).value ≈ 1.0
-    @test VaR(x̃, 0.51, fast=true).value ≈ 1.0
-    @test VaR(x̃, 0.3).value ≈ 0.0
-    @test VaR(x̃, 0.3, fast=true).value ≈ 0.0
-    @test VaR(x̃, 0.7).value ≈ 1.0
-    @test VaR(x̃, 0.7, fast=true).value ≈ 1.0
+    @test compute_VaR(x̃, 0.5).value  ≈ 1.0
+    @test compute_VaR(x̃, 0.51).value ≈ 1.0
+    @test compute_VaR(x̃, 0.3).value  ≈ 0.0
+    @test compute_VaR(x̃, 0.7).value  ≈ 1.0
 end
 
 @testset "VaR/CVaR/EVaR bounds" begin
@@ -104,30 +164,24 @@ end
     p = ones(length(X)) / length(X)
     x̃ = DiscreteNonParametric(X, p)
 
-    @test VaR(x̃, 0.5).value ≈ median(X)
-    @test VaR(x̃, 0.5, fast=true).value ≈ median(X)
-    @test -VaR(-x̃, 0.5).value ≈ median(X)
-    @test -VaR(-x̃, 0.5, fast=true).value ≈ median(X)
+    @test compute_VaR(x̃, 0.5).value   ≈ median(X)
+    @test -compute_VaR(-x̃, 0.5).value ≈ median(X)
 
     # must be a bound on the median when it is not
     X = [2.0, 5.0, 6.0, 9.0, 3.0, 1.0]
     p = ones(length(X)) / length(X)
     x̃ = DiscreteNonParametric(X, p)
 
-    @test -VaR(-x̃, 0.50001).value ≤ median(X)
-    @test -VaR(-x̃, 0.50001, fast=true).value ≤ median(X)
-    @test VaR(x̃, 0.50001).value ≥ median(X)
-    @test VaR(x̃, 0.50001, fast=true).value ≥ median(X)
+    @test -compute_VaR(-x̃, 0.50001).value ≤ median(X)
+    @test  compute_VaR( x̃, 0.50001).value ≥ median(X)
 
     # just test a larger version
     X = collect(-30:30)
     p = ones(length(X)) / length(X)
     x̃ = DiscreteNonParametric(X, p)
 
-    @test VaR(x̃, 0.500001).value ≈ median(X)
-    @test VaR(x̃, 0.500001, fast=true).value ≈ median(X)
-    @test -VaR(-x̃, 0.5000001).value ≈ median(X)
-    @test -VaR(-x̃, 0.5000001, fast=true).value ≈ median(X)
+    @test  compute_VaR( x̃, 0.500001).value  ≈ median(X)
+    @test -compute_VaR(-x̃, 0.5000001).value ≈ median(X)
 end
 
 @testset "CVaR" begin
@@ -135,31 +189,21 @@ end
     X = [4, 5, 1, 2, -1, -2]
     x̃ = DiscreteNonParametric(X, p)
 
-    @test CVaR(x̃, 0).value ≈ -1.0
-    @test CVaR(x̃, 0, fast=true).value ≈ -1.0
-    @test CVaR(x̃, 0.01).value ≈ -1.0
-    @test CVaR(x̃, 0.01, fast = true).value ≈ -1.0
-    @test CVaR(x̃, 1).value ≈ 1.6
-    @test CVaR(x̃, 1, fast=true).value ≈ 1.6
-    @test CVaR(x̃, 0.5).value ≈ -0.2
-    @test CVaR(x̃, 0.5, fast=true).value ≈ -0.2
-    @test CVaR(x̃, 0.6).value ≈ 0.0
-    @test CVaR(x̃, 0.6, fast=true).value ≈ 0.0
+    @test compute_CVaR(x̃, 0).value    ≈ -1.0
+    @test compute_CVaR(x̃, 0.01).value ≈ -1.0
+    @test compute_CVaR(x̃, 1).value    ≈ 1.6
+    @test compute_CVaR(x̃, 0.5).value  ≈ -0.2
+    @test compute_CVaR(x̃, 0.6).value  ≈ 0.0
 
     p = [0.1, 0.2, 0.3, 0.1, 0.3]
     X = [4.0, 5.0, 1.0, 2.0, -1.0]
     x̃ = DiscreteNonParametric(X, p)
 
-    @test CVaR(x̃, 0).value ≈ -1.0
-    @test CVaR(x̃, 0; fast = true).value ≈ -1.0
-    @test CVaR(x̃, 0.00).value ≈ -1.0
-    @test CVaR(x̃, 0.00; fast=true).value ≈ -1.0
-    @test CVaR(x̃, 1).value ≈ 1.6
-    @test CVaR(x̃, 1, fast=true).value ≈ 1.6
-    @test CVaR(x̃, 0.5).value ≈ -0.2
-    @test CVaR(x̃, 0.5, fast=true).value ≈ -0.2
-    @test CVaR(x̃, 0.6).value ≈ 0
-    @test CVaR(x̃, 0.6, fast = true).value ≈ 0
+    @test compute_CVaR(x̃, 0).value    ≈ -1.0
+    @test compute_CVaR(x̃, 0.00).value ≈ -1.0
+    @test compute_CVaR(x̃, 1).value    ≈ 1.6
+    @test compute_CVaR(x̃, 0.5).value  ≈ -0.2
+    @test compute_CVaR(x̃, 0.6).value  ≈ 0
 end
 
 @testset "Risk measures order" begin
@@ -170,12 +214,14 @@ end
     for α ∈ range(0.0, 1.0, 10)
         @test all(p .≥ 0.0)
 
-        @test minimum(X) ≤ EVaR(x̃, α; βmax=60).value
+        evar = compute_EVaR(x̃, α; βmax=60)
+        cvar = compute_CVaR(x̃, α)
+        var  = compute_VaR(x̃, α)
 
-        @test EVaR(x̃, α; βmax=60).value ≤ CVaR(x̃, α).value
-        @test CVaR(x̃, α).value ≤ VaR(x̃, α).value
-        @test CVaR(x̃, α).value ≤ VaR(x̃, α, fast=true).value
-        @test CVaR(x̃, α).value ≤ mean(x̃)
+        @test minimum(X) ≤ evar.value
+        @test evar.value ≤ cvar.value
+        @test cvar.value ≤ var.value
+        @test cvar.value ≤ mean(x̃)
     end
 end
 
@@ -186,12 +232,12 @@ end
 
     for α ∈ range(0.0, 1.0, 7)
         for c ∈ range(-10.0, 10.0, 6)
-            @test VaR(x̃ + c, α).value - c ≈ VaR(x̃, α).value
-            @test VaR(x̃ + c, α, fast=true).value - c ≈ VaR(x̃, α, fast=true).value
-            @test CVaR(x̃ + c, α).value - c ≈ CVaR(x̃, α).value
-            @test EVaR(x̃ + c, α).value - c ≈ EVaR(x̃, α).value
+            @test compute_VaR(x̃ + c, α).value - c  ≈ compute_VaR(x̃, α).value
+            @test compute_CVaR(x̃ + c, α).value - c ≈ compute_CVaR(x̃, α).value
+            @test compute_EVaR(x̃ + c, α).value - c ≈ compute_EVaR(x̃, α).value
             if zero(α) < α < one(α) * 0.5
-                @test ≈(expectile(x̃ + c, α).value, expectile(x̃, α).value + c, atol=1e-5, rtol=0.01)
+                @test compute_expectile(x̃ + c, α).value ≈
+                               compute_expectile(x̃, α).value + c atol=1e-5 
             end
         end
     end
@@ -204,11 +250,14 @@ end
 
     for α ∈ range(0.0, 1.0, 5)
         for c ∈ range(0.1, 10.0, 6)
-            @test ≈(VaR(x̃ * c, α).value, c * VaR(x̃, α).value, atol=1e-5, rtol=0.01)
-            @test ≈(VaR(x̃ * c, α, fast=true).value, c * VaR(x̃, α, fast=true).value, atol=1e-5, rtol=0.01)
-            @test ≈(CVaR(x̃ * c, α).value, c * CVaR(x̃, α).value, atol=1e-5, rtol=0.01)
-            @test ≈(EVaR(x̃ * c, α).value, c * EVaR(x̃, α).value, atol=1e-5, rtol=0.01)
-            @test ≈(expectile(x̃ * c, α, check_inputs=false).value, c * expectile(x̃, α, check_inputs=false).value, atol=1e-5, rtol=0.01)
+            @test ≈(compute_VaR(x̃ * c, α).value,
+                    c * compute_VaR(x̃, α).value, atol=1e-5, rtol=0.01)a
+            @test ≈(compute_CVaR(x̃ * c, α).value,
+                    c * compute_CVaR(x̃, α).value, atol=1e-5, rtol=0.01)
+            @test ≈(compute_EVaR(x̃ * c, α).value,
+                    c * compute_EVaR(x̃, α).value, atol=1e-5, rtol=0.01)
+            @test ≈(compute_expectile(x̃ * c, α, check_inputs=false).value,
+                    c * compute_expectile(x̃, α, check_inputs=false).value, atol=1e-5, rtol=0.01)
         end
     end
 end
@@ -221,10 +270,12 @@ end
     for α ∈ range(0.0, 1.0, 5)
         for c ∈ range(-10.0, 10.0, 6)
             for a ∈ range(0.1, 10.0, 6)
-                @test ≈(VaR(x̃ * a + c, α).value, a * VaR(x̃, α).value + c, atol=1e-5, rtol=0.001)
-                @test ≈(VaR(x̃ * a + c, α, fast=true).value, a * VaR(x̃, α, fast=true).value + c, atol=1e-5, rtol=0.001)
-                @test ≈(CVaR(x̃ * a + c, α).value, a * CVaR(x̃, α).value + c, atol=1e-5, rtol=0.001)
-                @test ≈(EVaR(x̃ * a + c, α).value, a * EVaR(x̃, α).value + c, atol=1e-5, rtol=0.001)
+                @test ≈(compute_VaR(x̃ * a + c, α).value,
+                        a * compute_VaR(x̃, α).value  + c, atol=1e-5, rtol=0.001)
+                @test ≈(compute_CVaR(x̃ * a + c, α).value,
+                        a * compute_CVaR(x̃, α).value + c, atol=1e-5, rtol=0.001)
+                @test ≈(compute_EVaR(x̃ * a + c, α).value,
+                        a * compute_EVaR(x̃, α).value + c, atol=1e-5, rtol=0.001)
             end
         end
     end
@@ -236,10 +287,7 @@ end
     x̃ = DiscreteNonParametric(X, p)
 
     for α ∈ range(0, 1, length=10)
-        e1 = EVaR(x̃, α; reciprocal=false)
-        e2 = EVaR(x̃, α; reciprocal=true)
-        @test e1.value ≈ e2.value
-        @test e1.β ≈ e2.β
+        compute_EVaR(x̃, α)
     end
 end
 
@@ -250,17 +298,12 @@ end
     x̃ = DiscreteNonParametric(X, p)
 
     for α ∈ 0:0.2:1
-        c = CVaR(x̃, α)
+        c = compute_CVaR(x̃, α)
         @test c.value ≈ mean(c.pmf)
-        e = EVaR(x̃, α)
+        e = compute_EVaR(x̃, α)
         @test e.value ≈ mean(e.pmf)
-        v = VaR(x̃, α)
+        v = compute_VaR(x̃, α)
         @test v.value ≈ mean(v.pmf)
-        v = VaR(x̃, α, fast=true)
-        @test v.value ≈ mean(v.pmf)
-        c_fast = CVaR(x̃, α, fast=true)
-        @test c_fast.value ≈ mean(c_fast.pmf)
-        @test c_fast.value ≈ c.value
     end
 end
 
@@ -268,10 +311,8 @@ end
     values = [3.0, 1.0, 2.0]
     pmf    = [0.3, 0.4, 0.3]
     for α ∈ range(0.0, 1.0, 6)
-        c_slow = CVaR(values, pmf, α; fast=false)
-        c_fast = CVaR(values, pmf, α; fast=true)
-        @test c_fast.value ≈ c_slow.value
-        @test values' * c_fast.pmf ≈ c_fast.value
+        c = compute_CVaR(x, pmf, α)
+        @test values' * c.pmf ≈ c.value
     end
 end
 
@@ -279,10 +320,7 @@ end
     values = [3.0, 1.0, 2.0]
     pmf    = [0.3, 0.4, 0.3]
     for α ∈ range(0.0, 1.0, 6)
-        v_slow = VaR(values, pmf, α; fast=false)
-        v_fast = VaR(values, pmf, α; fast=true)
-        @test v_fast.value ≈ v_slow.value
-        @test v_fast.index == v_slow.index
+        compute_VaR(x, pmf, α)
     end
 end
 
@@ -292,7 +330,7 @@ end
     p .= p ./ sum(p)
     x̃ = DiscreteNonParametric(X, p)
 
-    @test expectile(x̃, 0.5).value ≈ X' * p
+    @test compute_expectile(x̃, 0.5).value ≈ X' * p
     @test_throws ErrorException expectile(x̃, -1.0)
     @test_throws ErrorException expectile(x̃, 1.0)
     @test_throws ErrorException expectile(x̃, 0.0)
@@ -302,16 +340,17 @@ end
     for i ∈ eachindex(X)
         Y[i] < X[i] && (Y[i] = X[i])
     end
-    ỹ = DiscreteNonParametric(Y, p)
+    ỹ = DiscreteNonParametric(Y, p)
     z̃ = DiscreteNonParametric(Z, p)
     σ̃ = DiscreteNonParametric(X + Z, p)
     for α ∈ 0.1:0.01:0.9
-        @test expectile(x̃, α).value ≥ expectile(ỹ, α).value
+        @test compute_expectile(x̃, α).value ≥ compute_expectile(ỹ, α).value
         if α <= 0.5
-            @test expectile(σ̃, α).value + 1e-10 ≥ expectile(x̃, α).value + expectile(z̃, α).value
+            @test compute_expectile(σ̃, α).value + 1e-10 ≥
+                compute_expectile(x̃, α).value + compute_expectile(z̃, α).value
         else
-            @test expectile(σ̃, α).value - 1e-10 ≤ expectile(x̃, α).value + expectile(z̃, α).value
+            @test compute_expectile(σ̃, α).value - 1e-10 ≤
+                compute_expectile(x̃, α).value + compute_expectile(z̃, α).value
         end
     end
 end
-
