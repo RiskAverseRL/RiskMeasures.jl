@@ -11,8 +11,8 @@ function putter()
     pmf = [0.5, 0.05, 0.1, 0.05, 0.1, 0.2]
     α = 0.5
 
-    EVaR(values, pmf, α, reciprocal=true)
-    EVaR(values, pmf, α, reciprocal=false)
+    a = EVaR(values, pmf, α, reciprocal=true)
+    b = EVaR(values, pmf, α, reciprocal=false)
 end
 
 
@@ -35,11 +35,11 @@ function compute_VaR(x̃, α; kwargs...)
     return v
 end
 
-function compute_CVaR(x̃::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; kwargs...)
-    c      = CVaR(x̃, α; fast=false, kwargs...)
-    c_fast = CVaR(x̃, α; fast=true,  kwargs...)
+function compute_CVaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; kwargs...)
+    c      = CVaR(x, pmf, α; fast=false, kwargs...)
+    c_fast = CVaR(x, pmf, α; fast=true,  kwargs...)
     @test c.value ≈ c_fast.value
-    @test mean(c.pmf) ≈ mean(c_fast.pmf)
+    @test c.pmf ≈ c_fast.pmf atol=0.01
     return c
 end
 
@@ -47,7 +47,7 @@ function compute_CVaR(x̃, α; kwargs...)
     c      = CVaR(x̃, α; fast=false, kwargs...)
     c_fast = CVaR(x̃, α; fast=true,  kwargs...)
     @test c.value ≈ c_fast.value
-    @test mean(c.pmf)   ≈ mean(c_fast.pmf)
+    @test mean(c.pmf)   ≈ mean(c_fast.pmf) 
     return c
 end
 
@@ -55,11 +55,14 @@ function compute_EVaR(x̃, α; kwargs...)
     e       = EVaR(x̃, α; reciprocal=false, kwargs...)
     e_recip = EVaR(x̃, α; reciprocal=true,  kwargs...)
 
-    if !isapprox(e.β, e_recip.β, atol=0.0001)
-        println(x̃, "\t", α)
-    end
+    #if !isapprox(e.β, e_recip.β, atol=0.0001)
+    #    println(x̃, "\t", α)
+    #end
     @test e.value ≈ e_recip.value
-    @test e.β ≈ e_recip.β atol=0.0001
+    #@test e.β ≈ e_recip.β atol=0.0001 #unstable when EVaR == essinf
+    @test e.pmf.p ≈ e_recip.pmf.p atol=0.01
+    @test mean(e.pmf) ≈ e.value atol=0.02
+    @test mean(e_recip.pmf) ≈ e_recip.value atol=0.02
     return e
 end
 
@@ -250,14 +253,14 @@ end
 
     for α ∈ range(0.0, 1.0, 5)
         for c ∈ range(0.1, 10.0, 6)
-            @test ≈(compute_VaR(x̃ * c, α).value,
-                    c * compute_VaR(x̃, α).value, atol=1e-5, rtol=0.01)a
-            @test ≈(compute_CVaR(x̃ * c, α).value,
-                    c * compute_CVaR(x̃, α).value, atol=1e-5, rtol=0.01)
-            @test ≈(compute_EVaR(x̃ * c, α).value,
-                    c * compute_EVaR(x̃, α).value, atol=1e-5, rtol=0.01)
-            @test ≈(compute_expectile(x̃ * c, α, check_inputs=false).value,
-                    c * compute_expectile(x̃, α, check_inputs=false).value, atol=1e-5, rtol=0.01)
+            @test compute_VaR(x̃ * c, α).value ≈
+                    c * compute_VaR(x̃, α).value atol=1e-5 rtol=0.01
+            @test compute_CVaR(x̃ * c, α).value ≈
+                    c * compute_CVaR(x̃, α).value atol=1e-5 rtol=0.01
+            @test compute_EVaR(x̃ * c, α).value ≈
+                    c * compute_EVaR(x̃, α).value atol=1e-5 rtol=0.01
+            @test compute_expectile(x̃ * c, α, check_inputs=false).value ≈
+                    c * compute_expectile(x̃, α, check_inputs=false).value atol=1e-5 rtol=0.01
         end
     end
 end
@@ -311,7 +314,7 @@ end
     values = [3.0, 1.0, 2.0]
     pmf    = [0.3, 0.4, 0.3]
     for α ∈ range(0.0, 1.0, 6)
-        c = compute_CVaR(x, pmf, α)
+        c = compute_CVaR(values, pmf, α)
         @test values' * c.pmf ≈ c.value
     end
 end
@@ -320,7 +323,7 @@ end
     values = [3.0, 1.0, 2.0]
     pmf    = [0.3, 0.4, 0.3]
     for α ∈ range(0.0, 1.0, 6)
-        compute_VaR(x, pmf, α)
+        compute_VaR(values, pmf, α)
     end
 end
 

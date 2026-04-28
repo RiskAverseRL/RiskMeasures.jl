@@ -14,12 +14,14 @@ function `pmf`.
 When `α = 1`, the function computes the expected value, and when `α = 0`, then the 
 function computes the essential infimum (a minimum value with positive probability).
 
+
+
 The function solves
 ```math
 \\max_{β ∈ [βmin, βmax]} \\operatorname{ERM}_β (x̃) - β^{-1} \\log (1/(α)).
 ```
 
-Large values of `βmax` may cause the computation to overflow.
+Large values of `βmax` may cause the computation to overflow. 
 
 If `reciprocal = false`, then the quasi-concave problem above is solved directly.
 If `reciprocal = true`, then the optimization is reformulated in terms of `λ = 1/β`
@@ -28,7 +30,9 @@ to get a concave function that can be solved (probably) more efficiently
 The function implicitly assumes that all elements of the probability space have non-zero
 probability. 
 
-Returns the EVaR and the value β that attains the maximum above.
+# Returns
+The EVaR and the value β that attains the maximum above. 
+Note that the return value of `β` is unstable in cases when EVAR = essinf and the supremum
 
 See:
 Ahmadi-Javid, A. “Entropic Value-at-Risk: A New Coherent Risk Measure.” Journal of
@@ -72,8 +76,7 @@ function EVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
             pmf=softmin(values, pmf, β; x̃min=xmin, check_inputs=false))
     else
         logconst = log(α)
-        g(λ) = -(ERM(values, pmf, 1 / λ; x̃min=xmin, check_inputs=false) +
-                 λ * logconst)
+        g(λ) = -(ERM(values, pmf, 1 / λ; x̃min=xmin, check_inputs=false) + λ * logconst)
         # this is the derivative, but it does not appear to be useful
         # df(λ) = - (λ * ERM(values, pmf, 1/λ; xmin) + softmin(, p, 1/λ; xmin))
         sol = optimize(g, inv(βmax), inv(βmin), Brent())
