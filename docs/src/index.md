@@ -94,3 +94,37 @@ expectile
 ```@docs
 essinf
 ```
+
+## Choquet Risk
+
+```@docs
+choquet_risk
+```
+
+```@docs
+choquet_distortion_risk
+```
+
+```@docs
+cvar_capacity
+```
+
+```@docs
+cvar_distortion
+```
+
+```@docs
+closure_c
+```
+
+
+
+# Notable Internal Functions
+
+```@docs
+RiskMeasures.partition!
+```
+
+```@docs
+RiskMeasures.qql!
+```

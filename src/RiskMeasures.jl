@@ -3,8 +3,8 @@ module RiskMeasures
 using DispatchDoctor: @stable
 
 
-#@stable default_mode = "disable" begin
-@stable begin
+@stable default_mode = "disable" begin
+#@stable begin
     include("general.jl")
     include("essinf.jl")
     include("erm.jl")
