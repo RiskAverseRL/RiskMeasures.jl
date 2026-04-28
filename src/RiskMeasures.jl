@@ -12,8 +12,11 @@ using DispatchDoctor: @stable
     include("cvar.jl")
     include("evar.jl")
     include("expectile.jl")
+    include("choquet.jl")
 end
 
 export essinf, ERM, softmin, VaR, CVaR, EVaR, expectile
+export choquet_risk, closure_c, cvar_capacity
+export choquet_distortion_risk, cvar_distortion
 
 end

@@ -45,6 +45,10 @@ function compute_CVaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α
     c_fast = CVaR(x, pmf, α; fast=true,  kwargs...)
     @test c.value ≈ c_fast.value
     @test c.pmf ≈ c_fast.pmf atol=0.01
+        c_choquet = choquet_risk(x, pmf, cvar_capacity, α)
+        @test c_choquet ≈ c.value atol=1e-10
+        c_distortion = choquet_distortion_risk(x, pmf, cvar_distortion, α)
+        @test c_distortion ≈ c.value atol=1e-10
     return c
 end
 
