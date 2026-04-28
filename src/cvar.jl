@@ -7,7 +7,8 @@ function qCVaR!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Rea
     q, _ = qql!(copy(vals), copy(p), α)
     p_left =  one(T) - sum(p[i] for i in eachindex(p) if vals[i] < q; init=zero(T)) / α
 
-    p_left ≥ 0 || error("CVaR internal error: negative remaining probability")
+    p_left ≥ zero(p_left) ||
+        error("CVaR internal error: negative remaining probability")
 
     pc = zeros(T, length(p))
     value = zero(T)
@@ -37,7 +38,7 @@ Compute the conditional value at risk at level `α` for the random variable `x̃
 Compute CVaR for a discrete random variable with `values` and the probability mass
 function `pmf`. 
 
-The risk level `α` must satisfy the ``α ∈ [0,1]``. Risk aversion decreases with
+The risk level `α` must satisfy ``α ∈ [0,1]``. Risk aversion decreases with
 an increasing `α` and `α = 1` represents the expectation,
 `α = 0` computes the essential infimum (smallest value with positive probability).
 

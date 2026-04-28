@@ -6,6 +6,7 @@ random variable `x` with probabilities `pmf`.
 
 The choquet capacity function `c` is parametrized by a level `α`.
 """
+@stable
 function choquet_risk(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, c::Function,
                       α::Float64)
     indices = sortperm(x)
@@ -24,9 +25,10 @@ end
 """
     closure_c(ρ)
 
-Given a risk measure function *ρ*, return a *closure* that computes the submodular function
+Given a risk measure function `ρ`, return a closure that computes the submodular function
 `c(S) = -ρ(-1_S)` where `1_S` is the indicator vector of an index set `S`.
 """
+@stable
 function closure_c(ρ::Function)
     function (S::AbstractVector{<:Integer}, pmf::AbstractVector{<:Real}, alpha::Float64)
         # this is the submodular function

@@ -1,23 +1,19 @@
 module RiskMeasures
 
-include("general.jl")
+using DispatchDoctor: @stable
 
-include("essinf.jl")
-export essinf
 
-include("erm.jl")
-export ERM, softmin
+#@stable default_mode = "disable" begin
+@stable begin
+    include("general.jl")
+    include("essinf.jl")
+    include("erm.jl")
+    include("var.jl")
+    include("cvar.jl")
+    include("evar.jl")
+    include("expectile.jl")
+end
 
-include("var.jl")
-export VaR
-
-include("cvar.jl")
-export CVaR
-
-include("evar.jl")
-export EVaR
-
-include("expectile.jl")
-export expectile
+export essinf, ERM, softmin, VaR, CVaR, EVaR, expectile
 
 end

@@ -22,14 +22,14 @@ function `pmf`.  Also compute the index that achieves the value at risk.
 If `α = 0`, VaR returns the essential infimum, and if `α = 1`, VaR returns
 maximum possible value, because VaR_1 is infinity.
 
-Runs in ``n \\log(n)`` time where `n = length(x̃)`.
+Runs in ``n \\log(n)`` time where `n = length(values)`.
 
 # Returns
 
 A named tuple with VaR `value` and the `index` that achieves it. If such
 an index does not exist, when `α = 1`, then returns `index = -1`.
 
-# Keyword Arguments:
+# Keyword Arguments
 
 - `check_inputs=true`: check that the inputs are valid.
 - `fast=true`: use linear-time experimental implementation
@@ -42,7 +42,7 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
 
     T = float(eltype(values))
     # special cases
-    isone(α) && return (value=typemax(T), index=-1)
+    isone(α)  && return (value=typemax(T), index=-1)
     iszero(α) && return essinf(values, pmf; check_inputs=check_inputs)
 
     if !fast
@@ -56,10 +56,11 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
             p_accum -= pmf[i]
             p_accum ≤ α̂ && (pos = i; break)
         end
-        return (value=values[pos], index=pos)
+        return (value = float(values[pos])::T, index = pos)
     else
         qv = qql!(copy(values), copy(pmf), α)
-        (value=qv.value, index=something(findfirst(==(qv.value), values), -1))
+        return (value = float(qv.value),
+                index = something(findfirst(==(qv.value), values), -1))
     end
 end
 
@@ -70,13 +71,12 @@ function VaR(x̃, α::Real; kwargs...)
     v1 = VaR(supp, pmf, α; kwargs...)
 
     # construct the equivalent distribution
-    Tp = eltype(pmf)
-    Ts = eltype(supp)
+    Tp = float(eltype(supp))
 
     if v1.index > 0 # when VaR exists
         vpmf = zeros(Tp, length(pmf))
         vpmf[v1.index] = one(Tp)
-        ỹ = DiscreteNonParametric(supp, vpmf)
+        ỹ = DiscreteNonParametric(float.(supp), vpmf)
     else # happens then VaR is infinite
         ỹ = DiscreteNonParametric([typemax(Tp)], [one(Tp)])
     end

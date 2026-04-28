@@ -1,14 +1,16 @@
 name = "RiskMeasures"
 uuid = "b5a8929a-7a15-4aed-937e-21e1a404cbc5"
 authors = ["Marek Petrik <mpetrik@cs.unh.edu>, Gersi Doko, and others"]
-version = "0.5.0"
+version = "0.6.0"
 
 [deps]
+DispatchDoctor = "8d63f2c5-f18a-4cf2-ba9d-b3f60fc568c8"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 
 [compat]
-Optim = "1.11"
+DispatchDoctor = "0.4"
+Optim = "1.13"
 Distributions = "0.25"
 julia = "1.11"
 

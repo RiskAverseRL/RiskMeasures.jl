@@ -11,8 +11,8 @@ Compute the EVaR risk measure of the random variable `x̃` with risk level `α` 
 Compute EVaR for a discrete random variable with `values` and the probability mass
 function `pmf`.
 
-When `α = 1`, the function computes the expected value, and when `α = 0`, then the 
-function computes the essential infimum (a minimum value with positive probability).
+When `α = 1`, the function computes the expected value, and when `α = 0`, then the
+function computes the essential infimum (the minimum value with positive probability).
 
 
 
@@ -31,8 +31,9 @@ The function implicitly assumes that all elements of the probability space have 
 probability. 
 
 # Returns
-The EVaR and the value β that attains the maximum above. 
-Note that the return value of `β` is unstable in cases when EVAR = essinf and the supremum
+A named tuple with the EVaR `value`, the optimal `β` that attains the maximum, and the
+worst-case `pmf`. Note that `β` is numerically unstable when EVaR equals the essential
+infimum, because the supremum is attained in the limit as `β → ∞`.
 
 See:
 Ahmadi-Javid, A. “Entropic Value-at-Risk: A New Coherent Risk Measure.” Journal of
@@ -47,18 +48,19 @@ function EVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
     check_inputs && _check_α(α)
     check_inputs && _check_pmf(values, pmf)
 
-    T = float(eltype(pmf))
+    T = float(eltype(values))
 
     tol = 1e2 # tolerance for suboptimality
 
-    if isone(α)
-        return (value=values' * pmf, β=0.0, pmf=Vector{T}(pmf))
-    elseif iszero(α)
+    if isone(α) 
+        return (value = T(values' * pmf), β=zero(T), pmf=Vector{T}(pmf))
+    elseif iszero(α)  # essinf
         minval = essinf(values, pmf; check_inputs=false)
         minpmf = zeros(T, length(pmf))
         minpmf[minval.index] = one(T)
-        return (value=T(minval.value), β=T(Inf), pmf=minpmf)
+        return (value=T(minval.value), β=typemax(T), pmf=minpmf)
     end
+
 
     xmin = minimum(values)
     if !(reciprocal)
@@ -70,9 +72,9 @@ function EVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
         sol.abs_tol < tol || error("Failed to find optimal β (unknown reason).")
         isfinite(sol.minimum) ||
             error("Overflow, computed an invalid solution. Reduce βmax.")
-        β = float(sol.minimizer)
+        β = sol.minimizer
         # compute the robust representation solution from Donsker Varadhan
-        return (value=-float(sol.minimum), β=β,
+        return (value=T(-sol.minimum)::T, β=T(β)::T,
             pmf=softmin(values, pmf, β; x̃min=xmin, check_inputs=false))
     else
         logconst = log(α)
@@ -83,9 +85,9 @@ function EVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
         sol.abs_tol < tol || error("Failed to find optimal λ (unknown reason).")
         isfinite(sol.minimum) ||
             error("Overflow, computed an invalid solution. Reduce βmax.")
-        β = 1.0 / float(sol.minimizer)
+        β = one(sol.minimizer) / sol.minimizer
         # compute the robust representation solution from Donsker Varadhan
-        return (value=-float(sol.minimum), β=β,
+        return (value=T(-sol.minimum)::T, β=T(β)::T,
             pmf=softmin(values, pmf, β; x̃min=xmin, check_inputs=false))
     end
 end

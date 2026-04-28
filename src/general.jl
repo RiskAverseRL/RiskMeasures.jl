@@ -60,7 +60,7 @@ Dutch Flag algorithm into less than pivot, equal to pivot, and greater than pivo
 
 # Returns
 
-A tuple (lt, gt) where `i < lt => x[i] < pivot_val` and `i > gr => x[i] > pivot_val`
+A tuple (lt, gt) where `i < lt => x[i] < pivot_val` and `i > gt => x[i] > pivot_val`
 and `lt ≤ i ≤ gt => x[i] = pivot_val`, where `pivot_val = vals[pivot_ind]`.
 """
 function partition!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, pivot_ind::Int, f::Int, b::Int)
@@ -86,15 +86,14 @@ end
 """
     qql!(vals, p, α)
 
-Comput VaR in expected linear time without performing correctness checks. The runtime
-of the algorithm is randomized but the output value is deterministic. 
+Compute VaR in expected linear time without performing correctness checks. The runtime
+of the algorithm is randomized but the output value is deterministic.
 
-The input must satisfy `0 < α < 1` and the distribution and random variable must
-have the same lengths.
+The input must satisfy `0 < α < 1` and `p` and `vals` must have the same length.
 
 # Returns
 
-Value of type vals space converted to a float. 
+A named tuple with VaR `value` as a float and the `index` that achieves it.
 """
 function qql!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
     0 < α < 1 || _bad_risk("Violated: 0 < α < 1")
@@ -113,9 +112,19 @@ function qql!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
         elseif t + e ≤ α
             f = g + 1
             α -= t + e
-        else
+        else # t + e > α ≥ t means we found it!
             f = b = g
         end
     end
     return (value=float(vals[b]), index=b)
+end
+
+
+# a function solely used to check if the stability checks work
+@stable function test_stability(x :: Integer)
+    if x < 0
+        return float(x)
+    else
+        return x
+    end
 end

@@ -1,5 +1,10 @@
+using Preferences
+
+set_preferences!("RiskMeasures", "dispatch_doctor_mode" => "error")
+
 using RiskMeasures
 using Test
+using DispatchDoctor
 
 using Statistics: median, mean
 using LinearAlgebra: ones
@@ -356,4 +361,8 @@ end
                 compute_expectile(x̃, α).value + compute_expectile(z̃, α).value
         end
     end
+end
+
+@testset "Check type stability" begin
+    @test_throws DispatchDoctor.TypeInstabilityError RiskMeasures.test_stability(1)
 end
