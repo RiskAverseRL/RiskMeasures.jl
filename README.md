@@ -60,7 +60,7 @@ We can also compute risk measures of transformed random variables
 
 ```Julia
 VaR(5*x̃ + 10, 0.1)   # value at risk
-CVaR(x̃ - 10, 0.1)  # conditional value at risk
+CVaR(x̃ - 10, 0.1)    # conditional value at risk
 ```
 
 Please see the unit tests for examples of how this package can be used to compute the risk. 
@@ -69,7 +69,6 @@ Please see the unit tests for examples of how this package can be used to comput
 
 - Analytical computation for special distributions, like Normal and others
 - Add an optional intergration with Mosek's exponential cones to support computation of EVaR. 
-- Coquet capacity risk measures
 - General risk measure construction from utility functions, such as CE, OCE, utility shortfall risk measures. 
 - Phi-divergence risk mesures for any phi-divergence function
 

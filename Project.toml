@@ -1,7 +1,7 @@
 name = "RiskMeasures"
 uuid = "b5a8929a-7a15-4aed-937e-21e1a404cbc5"
 authors = ["Marek Petrik <mpetrik@cs.unh.edu>, Gersi Doko, and others"]
-version = "0.6.1"
+version = "0.6.2"
 
 [deps]
 DispatchDoctor = "8d63f2c5-f18a-4cf2-ba9d-b3f60fc568c8"
