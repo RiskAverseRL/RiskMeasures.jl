@@ -6,8 +6,6 @@ RiskMeasures
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://riskaverserl.github.io/RiskMeasures.jl/dev/)
 
 
-**Warning**: This is package is under development and the computed values should be treated with caution. 
-
 Julia library for computing risk measures for random variables. The random variable represents *profits* or *rewards* that are to be maximized. Also the computed risk value is preferable when it is greater.
 
 

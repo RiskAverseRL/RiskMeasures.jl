@@ -370,3 +370,7 @@ end
 @testset "Check type stability" begin
     @test_throws DispatchDoctor.TypeInstabilityError RiskMeasures.test_stability(1)
 end
+
+# general quality assurance
+using Aqua
+Aqua.test_all(RiskMeasures)
