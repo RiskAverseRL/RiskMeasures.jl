@@ -367,6 +367,23 @@ end
     end
 end
 
+@testset "Large CVaR/VaR Test" begin
+    Random.seed!(1981)
+    n = 1e2 |> Int
+    x = rand(Float64, n) .* 100
+    pmf_uniform = ones(n) ./ n
+    pmf_sparse = zeros(Float64, n)
+    inds = unique(rand(1:n, Int(ceil(log(n)))))
+    pmf_sparse[inds] .= 1 / length(inds)
+
+    for α ∈ 0.1:0.05:0.9
+        compute_VaR(x, pmf_uniform, α)
+        compute_CVaR(x, pmf_uniform, α)
+        compute_VaR(x, pmf_sparse, α)
+        compute_CVaR(x, pmf_sparse, α)
+    end
+end
+
 @testset "Check type stability" begin
     @test_throws DispatchDoctor.TypeInstabilityError RiskMeasures.test_stability(1)
 end
