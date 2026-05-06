@@ -46,15 +46,15 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
     iszero(α) && return essinf(values, pmf; check_inputs=check_inputs)
 
     if !fast
-        sortedi = sortperm(values; rev = true) # sort descending
-        pos = last(sortedi) # this value is used when the loop does not break
-        p_accum = one(T)
+        sortedi = sortperm(values) # sort ascending order
+        pos = first(sortedi) # this value is used when the loop does not break
+        p_accum = zero(T)
 
         α̂ = α 
         # find the index such that the sum of the probabilities is greater than alpha
         @inbounds for i ∈ sortedi
-            p_accum -= pmf[i]
-            p_accum ≤ α̂ && (pos = i; break)
+            p_accum += pmf[i]
+            p_accum > α̂ && (pos = i; break)
         end
         return (value = float(values[pos])::T, index = pos)
     else

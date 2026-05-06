@@ -11,19 +11,9 @@ using LinearAlgebra: ones
 using Distributions
 import Random
 
-function putter()
-    values = [-20.0, -4.7, 1.6, 2.8, 5.3, 10.0]
-    pmf = [0.5, 0.05, 0.1, 0.05, 0.1, 0.2]
-    α = 0.5
-
-    a = EVaR(values, pmf, α, reciprocal=true)
-    b = EVaR(values, pmf, α, reciprocal=false)
-end
-
-
 function compute_VaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; kwargs...)
-    v      = VaR(x, pmf, α; fast=false, kwargs...)
-    v_fast = VaR(x, pmf, α; fast=true,  kwargs...)
+    v = VaR(x, pmf, α; fast=false, kwargs...)
+    v_fast = VaR(x, pmf, α; fast=true, kwargs...)
     @test v.value ≈ v_fast.value
     @test v.index < 1 ? v_fast.index == v.index == -1 : true
     @test v.index < 1 || (x[v.index] == v.value == v_fast.value)
@@ -32,46 +22,46 @@ function compute_VaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α:
 end
 
 function compute_VaR(x̃, α; kwargs...)
-    v      = VaR(x̃, α; fast=false, kwargs...)
-    v_fast = VaR(x̃, α; fast=true,  kwargs...)
+    v = VaR(x̃, α; fast=false, kwargs...)
+    v_fast = VaR(x̃, α; fast=true, kwargs...)
     @test v.value ≈ v_fast.value
-    @test v.value ≈ mean(v.pmf) 
+    @test v.value ≈ mean(v.pmf)
     @test mean(v.pmf) ≈ mean(v_fast.pmf)
     return v
 end
 
 function compute_CVaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; kwargs...)
-    c      = CVaR(x, pmf, α; fast=false, kwargs...)
-    c_fast = CVaR(x, pmf, α; fast=true,  kwargs...)
+    c = CVaR(x, pmf, α; fast=false, kwargs...)
+    c_fast = CVaR(x, pmf, α; fast=true, kwargs...)
     @test c.value ≈ c_fast.value
-    @test c.pmf ≈ c_fast.pmf atol=0.01
-        c_choquet = choquet_risk(x, pmf, cvar_capacity, α)
-        @test c_choquet ≈ c.value atol=1e-10
-        c_distortion = choquet_distortion_risk(x, pmf, cvar_distortion, α)
-        @test c_distortion ≈ c.value atol=1e-10
+    @test c.pmf ≈ c_fast.pmf atol = 0.01
+    c_choquet = choquet_risk(x, pmf, cvar_capacity, α)
+    @test c_choquet ≈ c.value atol = 1e-10
+    c_distortion = choquet_distortion_risk(x, pmf, cvar_distortion, α)
+    @test c_distortion ≈ c.value atol = 1e-10
     return c
 end
 
 function compute_CVaR(x̃, α; kwargs...)
-    c      = CVaR(x̃, α; fast=false, kwargs...)
-    c_fast = CVaR(x̃, α; fast=true,  kwargs...)
+    c = CVaR(x̃, α; fast=false, kwargs...)
+    c_fast = CVaR(x̃, α; fast=true, kwargs...)
     @test c.value ≈ c_fast.value
-    @test mean(c.pmf)   ≈ mean(c_fast.pmf) 
+    @test mean(c.pmf) ≈ mean(c_fast.pmf)
     return c
 end
 
 function compute_EVaR(x̃, α; kwargs...)
-    e       = EVaR(x̃, α; reciprocal=false, kwargs...)
-    e_recip = EVaR(x̃, α; reciprocal=true,  kwargs...)
+    e = EVaR(x̃, α; reciprocal=false, kwargs...)
+    e_recip = EVaR(x̃, α; reciprocal=true, kwargs...)
 
     #if !isapprox(e.β, e_recip.β, atol=0.0001)
     #    println(x̃, "\t", α)
     #end
     @test e.value ≈ e_recip.value
     #@test e.β ≈ e_recip.β atol=0.0001 #unstable when EVaR == essinf
-    @test e.pmf.p ≈ e_recip.pmf.p atol=0.01
-    @test mean(e.pmf) ≈ e.value atol=0.02
-    @test mean(e_recip.pmf) ≈ e_recip.value atol=0.02
+    @test e.pmf.p ≈ e_recip.pmf.p atol = 0.01
+    @test mean(e.pmf) ≈ e.value atol = 0.02
+    @test mean(e_recip.pmf) ≈ e_recip.value atol = 0.02
     return e
 end
 
@@ -369,7 +359,7 @@ end
 
 @testset "Large CVaR/VaR Test" begin
     Random.seed!(1981)
-    n = 1e2 |> Int
+    n = 1000 |> Int
     x = rand(Float64, n) .* 100
     pmf_uniform = ones(n) ./ n
     pmf_sparse = zeros(Float64, n)
@@ -377,10 +367,11 @@ end
     pmf_sparse[inds] .= 1 / length(inds)
 
     for α ∈ 0.1:0.05:0.9
-        compute_VaR(x, pmf_uniform, α)
-        compute_CVaR(x, pmf_uniform, α)
-        compute_VaR(x, pmf_sparse, α)
-        compute_CVaR(x, pmf_sparse, α)
+      risk_level = α + 1e-5
+      compute_VaR(x, pmf_uniform, risk_level)
+      compute_CVaR(x, pmf_uniform, risk_level)
+      compute_VaR(x, pmf_sparse, risk_level)
+      compute_CVaR(x, pmf_sparse, risk_level)
     end
 end
 
