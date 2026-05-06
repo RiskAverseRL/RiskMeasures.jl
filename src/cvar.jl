@@ -2,13 +2,9 @@ using Distributions
 
 # linear-time implementation of CVaR
 function qCVaR!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
-
     T = float(eltype(vals))
     q, _ = qql!(copy(vals), copy(p), α)
-    p_left =  one(T) - sum(p[i] for i in eachindex(p) if vals[i] < q; init=zero(T)) / α
-
-    p_left ≥ zero(p_left) ||
-        error("CVaR internal error: negative remaining probability")
+    p_left =  one(T) - (sum(p[i] for i in eachindex(p) if vals[i] < q; init=zero(T)) / α)
 
     pc = zeros(T, length(p))
     value = zero(T)
@@ -105,7 +101,6 @@ function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
     else
         qCVaR!(copy(values), copy(pmf), α)
     end
-        
 end
 
 function CVaR(x̃, α::Real; kwargs...)

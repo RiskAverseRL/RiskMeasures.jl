@@ -15,9 +15,9 @@ function compute_VaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α:
     v = VaR(x, pmf, α; fast=false, kwargs...)
     v_fast = VaR(x, pmf, α; fast=true, kwargs...)
     @test v.value ≈ v_fast.value
+    @test v.index < 1 || x[v.index] == v.value
+    @test v.index < 1 ||x[v_fast.index] == v_fast.value
     @test v.index < 1 ? v_fast.index == v.index == -1 : true
-    @test v.index < 1 || (x[v.index] == v.value == v_fast.value)
-    @test v.index < 1 || (x[v.index] == x[v_fast.index])
     return v
 end
 
@@ -54,11 +54,7 @@ function compute_EVaR(x̃, α; kwargs...)
     e = EVaR(x̃, α; reciprocal=false, kwargs...)
     e_recip = EVaR(x̃, α; reciprocal=true, kwargs...)
 
-    #if !isapprox(e.β, e_recip.β, atol=0.0001)
-    #    println(x̃, "\t", α)
-    #end
     @test e.value ≈ e_recip.value
-    #@test e.β ≈ e_recip.β atol=0.0001 #unstable when EVaR == essinf
     @test e.pmf.p ≈ e_recip.pmf.p atol = 0.01
     @test mean(e.pmf) ≈ e.value atol = 0.02
     @test mean(e_recip.pmf) ≈ e_recip.value atol = 0.02
@@ -366,13 +362,12 @@ end
     inds = unique(rand(1:n, Int(ceil(log(n)))))
     pmf_sparse[inds] .= 1 / length(inds)
 
-    for α ∈ 0.1:0.05:0.9
+    for α ∈ 0.01:0.05:0.99
       risk_level = α + 1e-5
       compute_VaR(x, pmf_uniform, risk_level)
       compute_CVaR(x, pmf_uniform, risk_level)
       compute_VaR(x, pmf_sparse, risk_level)
       compute_CVaR(x, pmf_sparse, risk_level)
-
     end
 end
 
