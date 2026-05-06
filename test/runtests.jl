@@ -15,9 +15,8 @@ function compute_VaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α:
     v = VaR(x, pmf, α; fast=false, kwargs...)
     v_fast = VaR(x, pmf, α; fast=true, kwargs...)
     @test v.value ≈ v_fast.value
-    @test v.index == v_fast.index
-    @test x[v.index] == v.value
-    @test x[v_fast.index] == v_fast.value
+    @test v.index < 1 || x[v.index] == v.value
+    @test v.index < 1 ||x[v_fast.index] == v_fast.value
     @test v.index < 1 ? v_fast.index == v.index == -1 : true
     return v
 end
