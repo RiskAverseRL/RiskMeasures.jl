@@ -54,11 +54,7 @@ function compute_EVaR(x̃, α; kwargs...)
     e = EVaR(x̃, α; reciprocal=false, kwargs...)
     e_recip = EVaR(x̃, α; reciprocal=true, kwargs...)
 
-    #if !isapprox(e.β, e_recip.β, atol=0.0001)
-    #    println(x̃, "\t", α)
-    #end
     @test e.value ≈ e_recip.value
-    #@test e.β ≈ e_recip.β atol=0.0001 #unstable when EVaR == essinf
     @test e.pmf.p ≈ e_recip.pmf.p atol = 0.01
     @test mean(e.pmf) ≈ e.value atol = 0.02
     @test mean(e_recip.pmf) ≈ e_recip.value atol = 0.02
