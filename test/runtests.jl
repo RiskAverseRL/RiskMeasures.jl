@@ -15,9 +15,10 @@ function compute_VaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α:
     v = VaR(x, pmf, α; fast=false, kwargs...)
     v_fast = VaR(x, pmf, α; fast=true, kwargs...)
     @test v.value ≈ v_fast.value
+    @test v.index == v_fast.index
+    @test x[v.index] == v.value
+    @test x[v_fast.index] == v_fast.value
     @test v.index < 1 ? v_fast.index == v.index == -1 : true
-    @test v.index < 1 || (x[v.index] == v.value == v_fast.value)
-    @test v.index < 1 || (x[v.index] == x[v_fast.index])
     return v
 end
 
@@ -362,13 +363,12 @@ end
     inds = unique(rand(1:n, Int(ceil(log(n)))))
     pmf_sparse[inds] .= 1 / length(inds)
 
-    for α ∈ 0.1:0.05:0.9
+    for α ∈ 0.01:0.05:0.99
       risk_level = α + 1e-5
       compute_VaR(x, pmf_uniform, risk_level)
       compute_CVaR(x, pmf_uniform, risk_level)
       compute_VaR(x, pmf_sparse, risk_level)
       compute_CVaR(x, pmf_sparse, risk_level)
-
     end
 end
 
