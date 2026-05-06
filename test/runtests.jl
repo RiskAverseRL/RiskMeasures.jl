@@ -372,6 +372,7 @@ end
       compute_CVaR(x, pmf_uniform, risk_level)
       compute_VaR(x, pmf_sparse, risk_level)
       compute_CVaR(x, pmf_sparse, risk_level)
+
     end
 end
 
