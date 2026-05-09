@@ -78,10 +78,10 @@ function choquet_distortion_risk(x::AbstractVector{<:Real}, pmf::AbstractVector{
     T = float(eltype(pmf))
 
     g_prev = zero(T)
-    value  = zero(T)
-    F      = zero(T)
+    value = zero(T)
+    F = zero(T)
     for i in 1:length(x)
-        F     += pmf[indices[i]]
+        F += pmf[indices[i]]
         g_curr = T(g(F, α))
         value += (g_curr - g_prev) * x[indices[i]]
         g_prev = g_curr
