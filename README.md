@@ -53,7 +53,7 @@ CVaR(x̃, 0.1)  # conditional value at risk
 EVaR(x̃, 0.1)  # entropic value at risk
 ERM(x̃, 0.1)   # entropic risk measure
 expectile(x̃, 0.1)   # expectile risk measure
-UBSR(x, u, 0.1)  # utility-based shortfall risk measure with utility function u
+UBSR(x̃, u, 0.1)  # utility-based shortfall risk measure with utility function u 
 ```
 
 ### Using transformed random variables
