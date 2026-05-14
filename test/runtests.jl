@@ -65,6 +65,10 @@ function compute_expectile(x̃, α; kwargs...)
     expectile(x̃, α; kwargs...)
 end
 
+function compute_UBSR(x, p, u, λ; kwargs...)
+    UBSR(x, p, u, λ; kwargs...)
+end
+
 @testset "ERM" begin
     X = [2.0, 5.0, 6.0, 9.0, 3.0, 1.0]
     p = [0.1, 0.1, 0.2, 0.5, 0.1, 0.0]
@@ -369,6 +373,43 @@ end
       compute_VaR(x, pmf_sparse, risk_level)
       compute_CVaR(x, pmf_sparse, risk_level)
     end
+end
+
+@testset "UBSR Test" begin
+    function test_UBSR(x, p)
+      u = (z) -> z
+      v = compute_UBSR(x, p, u, 0)
+      @test v.value ≈ sum(x .* p) atol=1e-5
+      dnp = DiscreteNonParametric(x, p)
+      v2 = UBSR(dnp, u, 0)
+      @test v2.value ≈ sum(x .* p) atol=1e-5
+      # Special cases
+      # ERM
+      β = 0.5
+      u = (z) -> (-exp(-β * z))
+      v = compute_UBSR(x, p, u, -1)
+      @test v.value ≈ ERM(x, p, β) atol=1e-5
+      # VaR
+      α = 0.9
+      u = (z) -> (z >= 0 ? 1 : 0)
+      v = compute_UBSR(x, p, u, α)
+      @test v.value ≈ compute_VaR(x, p, 1-α).value atol=1e-5
+      # Expectile
+      u = (z) -> (α * max(z, 0) - (1-α) * max(-z, 0))
+      v = compute_UBSR(x, p, u, 0)
+      @test v.value ≈ compute_expectile(dnp, α).value atol=1e-5
+    end
+    x = [1.0, 2.0, 3.0]
+    p = [0.2, 0.5, 0.3]
+    test_UBSR(x, p)
+    x = collect(1.0:20.0)
+    p = collect(20.0:-1:1.0)
+    p .= p ./ sum(p)
+    test_UBSR(x, p)
+    x = collect(-10.0:10.0)
+    p = collect(1.0:21.0)
+    p .= p ./ sum(p)
+    test_UBSR(x, p)
 end
 
 @testset "Check type stability" begin

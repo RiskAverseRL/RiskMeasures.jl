@@ -117,6 +117,11 @@ cvar_distortion
 closure_c
 ```
 
+## UBSR
+
+```@docs
+UBSR
+```
 
 
 # Notable Internal Functions
