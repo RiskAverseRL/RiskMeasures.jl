@@ -391,7 +391,7 @@ end
       @test v.value ≈ ERM(x, p, β) atol=1e-5
       # VaR
       α = 0.9
-      u = (z) -> (z >= 0 ? 1 : 0)
+      u = (z) -> (z ≥ 0 ? 1 : 0)
       v = compute_UBSR(x, p, u, α)
       @test v.value ≈ compute_VaR(x, p, 1-α).value atol=1e-5
       # Expectile

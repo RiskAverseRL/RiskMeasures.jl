@@ -63,18 +63,14 @@ function softmin(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real},
     check_inputs && _check_pmf(values, pmf)
 
     if β > zero(β)
-        # TODO: only needs to look at values with pos prob.
         # because softmin is translation invariant add the subtract the smallest value
         # ensures that values ≥ 0
-        if isfinite(x̃min)
-            np = similar(pmf)
-            np .= @fastmath pmf .* exp.(-β .* (values .- x̃min))
-            np .= @fastmath inv(sum(np)) .* np
-            mapreduce(isfinite, &, np) || error("Overflow, reduce β.")
-            np
-        else
-            error("Input must be finite.")
-        end
+        x̃min = isfinite(x̃min) ? x̃min : minimum(values)
+        np = similar(pmf)
+        np .= @fastmath pmf .* exp.(-β .* (values .- x̃min))
+        np .= @fastmath inv(sum(np)) .* np
+        mapreduce(isfinite, &, np) || error("Overflow, reduce β.")
+        np
     else
         _bad_risk("Risk level β must be positive (>0).")
     end

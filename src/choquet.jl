@@ -26,7 +26,7 @@ function choquet_risk(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, c:
         ξ[indices[i]] = c_curr - c_prev
         c_prev = c_curr
     end
-    ξ' * x
+    (value = ξ'*x, pmf = ξ)
 end
 
 
@@ -76,17 +76,17 @@ function choquet_distortion_risk(x::AbstractVector{<:Real}, pmf::AbstractVector{
 
     indices = sortperm(x)
     T = float(eltype(pmf))
-
+    ξ = zeros(T, length(x))
+    
     g_prev = zero(T)
-    value = zero(T)
     F = zero(T)
     for i in 1:length(x)
         F += pmf[indices[i]]
         g_curr = T(g(F, α))
-        value += (g_curr - g_prev) * x[indices[i]]
+        ξ[indices[i]] = g_curr - g_prev
         g_prev = g_curr
     end
-    value
+    (value = ξ'*x, pmf = ξ)
 end
 
 
