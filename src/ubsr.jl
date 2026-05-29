@@ -12,7 +12,7 @@ Compute the Utility Based Shortfall RiskMeasure (UBSR) for a discrete random var
 values `x`, and pmf `p`, for a monotone function `u`, and risk-threshold `λ`.
 
 ```math
-\\operatorname{UBSR(x, p, u, λ) =
+\\operatorname{UBSR}(x, p, u, λ) =
 \\sup \\{z ∈ ℝ \\mid \\mathbb{E}[u(\\tilde{x} - z)] ≥ λ \\} =
 \\sup \\{z ∈ ℝ \\mid -g(z) \\le -λ \\}
 ```
@@ -26,7 +26,7 @@ If `u` is NOT monotone (non-decreasing), the `UBSR` return is undefined and may
 terminate with an error.
 
 # Keyword Arguments:
-- `zmin=-1e6`, `zmax-1e6`: Lower and upper bounds for the bisection search.
+- `zmin=-1e6`, `zmax=1e6`: Lower and upper bounds for the bisection search.
 - `tol=1e-7`: Tolerance for convergence of the bisection method.
 
 # Returns
@@ -42,8 +42,8 @@ function UBSR(x::AbstractVector{<:Real}, p::AbstractVector{<:Real}, u::Function,
     g(z) = p' * u.(x .- z) # is non-increasing
 
 
-    g(zmin) < λ && (@warn("zmin is too high: E[u(x - z_min)] < λ."); return (value=-Inf,))
-    g(zmax) ≥ λ && (@warn("zmax is too low: E[u(x - z_max)] > λ."); return (value=Inf,))
+    g(zmin) < λ && (@warn "zmin is too high: E[u(x - z_min)] < λ." ; return (value=-Inf,))
+    g(zmax) ≥ λ && (@warn "zmax is too low: E[u(x - z_max)] > λ."; return (value=Inf,))
 
     g(zmin) < g(zmax) && error("Function g is not monotone: $(g(zmin)) < $(g(gmax)).")
     

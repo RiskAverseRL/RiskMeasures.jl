@@ -1,6 +1,6 @@
 """
 
-    choquet_risk(x, pmf, c, α)
+    choquet_risk(x̃, c, α)
 
 Compute the risk measure for a given choquet capacity function `c` and
 random variable `x̃`.
@@ -12,7 +12,7 @@ Compute the risk measure for a given choquet capacity function `c` and
 random variable `x` with probabilities `pmf`.
 
 The choquet capacity function `c` that returns a non-negative value
-and is parametrized by the random variable `S`, a probablily mass function `pmf`, and
+and is parametrized by the random variable `S`, a probability mass function `pmf`, and
 level `α ∈ [0,1]`.
 
 The runtime of this function can be quadratic depending on the evaluation of the

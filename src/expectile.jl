@@ -5,7 +5,7 @@ using Distributions
     expectile(x̃, α)
 
 Compute the expectile risk measure of the random variable `x̃` with risk level
-`α ∈ (0,1)`. When `α = 1/2`, the function computes the expected value.
+`α ∈ (0,1)`. When `α = 1/2`, the function computes the expected value. 
 
     expectile(values, pmf, α; ...)
 

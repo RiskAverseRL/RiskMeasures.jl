@@ -11,6 +11,11 @@ using LinearAlgebra: ones
 using Distributions
 import Random
 
+## === Disable warnings
+import Logging
+Logging.disable_logging(Logging.Warn)
+
+
 function compute_VaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; kwargs...)
     v = VaR(x, pmf, α; fast=false, kwargs...)
     v_fast = VaR(x, pmf, α; fast=true, kwargs...)
@@ -343,20 +348,25 @@ end
     @test_throws ErrorException expectile(x̃, 1.0)
     @test_throws ErrorException expectile(x̃, 0.0)
     # Test monotonocity and subaddativity
+    X = rand(Float64, length(X))
     Y = rand(Float64, length(X))
     Z = rand(Float64, length(X))
-    for i ∈ eachindex(X)
+    for i ∈ eachindex(X) # make sure that Y ≥ X
         Y[i] < X[i] && (Y[i] = X[i])
     end
+    x̃ = DiscreteNonParametric(X, p)
     ỹ = DiscreteNonParametric(Y, p)
     z̃ = DiscreteNonParametric(Z, p)
     σ̃ = DiscreteNonParametric(X + Z, p)
     for α ∈ 0.1:0.01:0.9
-        @test compute_expectile(x̃, α).value ≥ compute_expectile(ỹ, α).value
+        # check monotonocity
+        @test compute_expectile(ỹ, α).value ≥ compute_expectile(x̃, α).value
         if α <= 0.5
+            # check sub-additivity
             @test compute_expectile(σ̃, α).value + 1e-10 ≥
                 compute_expectile(x̃, α).value + compute_expectile(z̃, α).value
         else
+            # check super-additivity
             @test compute_expectile(σ̃, α).value - 1e-10 ≤
                 compute_expectile(x̃, α).value + compute_expectile(z̃, α).value
         end

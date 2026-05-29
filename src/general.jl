@@ -1,4 +1,4 @@
-using Distributions: DiscreteNonParametric, DiscreteAffineDistribution
+using Distributions: DiscreteNonParametric, DiscreteAffineDistribution, MixtureModel
 
 _bad_risk(msg::AbstractString) =
     error(msg)
@@ -35,12 +35,17 @@ end
 function rv2pmf(x̃::DiscreteAffineDistribution)
     # needs to handle location-scale separately because
     # the implementation of the pdf function in Distributions.LocationScale
-    # leads to numerrical errors
+    # leads to numerical errors
 
     sp = support(x̃.ρ)
     pmf = pdf.(x̃.ρ, sp)
     sp = @. sp * x̃.σ + x̃.μ
     (sp, pmf)
+end
+
+function rv2pmf(x̃::MixtureModel)
+    sp = support(x̃)
+    (sp, pdf.(x̃, sp))
 end
 
 # swaps the elements of vals between 
