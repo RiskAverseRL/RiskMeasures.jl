@@ -58,7 +58,7 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
         end
         return (value = float(values[pos])::T, index = pos)
     else
-        qv = qql!(copy(values), copy(pmf), α)
+        qv = qql!(Vector(values), Vector(pmf), α)
         return (value = float(qv.value),
                 index = something(findfirst(==(qv.value), values), -1))
     end

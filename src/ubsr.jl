@@ -13,14 +13,14 @@ values `x`, and pmf `p`, for a monotone function `u`, and risk-threshold `λ`.
 
 ```math
 \\operatorname{UBSR}(x, p, u, λ) =
-\\sup \\{z ∈ ℝ \\mid \\mathbb{E}[u(\\tilde{x} - z)] ≥ λ \\} =
-\\sup \\{z ∈ ℝ \\mid -g(z) \\le -λ \\}
+\\sup \\{z ∈ ℝ \\mid \\mathbb{E}[u(\\tilde{x} - z)] ≥ -λ \\} =
+\\sup \\{z ∈ ℝ \\mid -g(z) \\le λ \\}
 ```
 where
 ```math
 g(z) := \\mathbb{E}[u(\\tilde{x} - z)]
 ```
-The UBSR can be seen as the right-continuous inverse of -g
+The UBSR can be seen as the right-continuous inverse of g
 
 If `u` is NOT monotone (non-decreasing), the `UBSR` return is undefined and may
 terminate with an error.
@@ -42,8 +42,8 @@ function UBSR(x::AbstractVector{<:Real}, p::AbstractVector{<:Real}, u::Function,
     g(z) = p' * u.(x .- z) # is non-increasing
 
 
-    g(zmin) < λ && (@warn "zmin is too high: E[u(x - z_min)] < λ." ; return (value=-Inf,))
-    g(zmax) ≥ λ && (@warn "zmax is too low: E[u(x - z_max)] > λ."; return (value=Inf,))
+    g(zmin) < -λ && (@warn "zmin is too high: E[u(x - z_min)] < λ." ; return (value=-Inf,))
+    g(zmax) ≥ -λ && (@warn "zmax is too low: E[u(x - z_max)] > λ."; return (value=Inf,))
 
     g(zmin) < g(zmax) && error("Function g is not monotone: $(g(zmin)) < $(g(gmax)).")
     
@@ -52,7 +52,7 @@ function UBSR(x::AbstractVector{<:Real}, p::AbstractVector{<:Real}, u::Function,
         zmid = (zmin + zmax) / 2
         umid = g(zmid)
 
-        if umid ≥ λ
+        if umid ≥ -λ
             zmin = zmid
         else
             zmax = zmid

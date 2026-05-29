@@ -3,7 +3,7 @@ using Distributions
 # linear-time implementation of CVaR
 function qCVaR!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
     T = float(eltype(vals))
-    q, _ = qql!(copy(vals), copy(p), α)
+    q, _ = qql!(Vector(vals), Vector(p), α)
     p_left =  one(T) - (sum(p[i] for i in eachindex(p) if vals[i] < q; init=zero(T)) / α)
 
     pc = zeros(T, length(p))

@@ -19,7 +19,7 @@ Logging.disable_logging(Logging.Warn)
 function compute_VaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; kwargs...)
     v = VaR(x, pmf, α; fast=false, kwargs...)
     v_fast = VaR(x, pmf, α; fast=true, kwargs...)
-    v_ubsr = UBSR(x, pmf, z -> (z ≥ 0 ? 1 : 0), 1-α)
+    v_ubsr = UBSR(x, pmf, z -> (z ≥ 0 ? 0 : -1), α)
     @test v.value ≈ v_fast.value
     @test v.index < 1 || x[v.index] == v.value
     @test v.index < 1 ||x[v_fast.index] == v_fast.value
@@ -31,7 +31,7 @@ end
 function compute_VaR(x̃, α; kwargs...)
     v = VaR(x̃, α; fast=false, kwargs...)
     v_fast = VaR(x̃, α; fast=true, kwargs...)
-    v_ubsr = UBSR(x̃, z -> (z ≥ 0 ? 1 : 0), 1-α)
+    v_ubsr = UBSR(x̃, z -> (z ≥ 0 ? 0 : -1), α)
     @test v.value ≈ v_fast.value
     @test v.value ≈ mean(v.pmf)
     @test mean(v.pmf) ≈ mean(v_fast.pmf)
@@ -402,14 +402,14 @@ end
       # Special cases
       # ERM
       β = 0.5
-      u = (z) -> (-exp(-β * z))
-      v = UBSR(x, p, u, -1)
+      u = z -> (-exp(-β * z))
+      v = UBSR(x, p, u, 1)
       @test v.value ≈ ERM(x, p, β) atol=1e-5
       # VaR
-      α = 0.9
-      u = (z) -> (z ≥ 0 ? 1 : 0)
+      α = 0.9001
+      u = (z) -> (z > 0 ? 0 : -1)
       v = UBSR(x, p, u, α)
-      @test v.value ≈ compute_VaR(x, p, 1-α).value atol=1e-5
+      @test v.value ≈ compute_VaR(x, p, α).value atol=1e-5
       # Expectile
       u = (z) -> (α * max(z, 0) - (1-α) * max(-z, 0))
       v = UBSR(x, p, u, 0)
