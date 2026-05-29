@@ -100,7 +100,7 @@ The input must satisfy `0 < α < 1` and `p` and `vals` must have the same length
 
 A named tuple with VaR `value` as a float and the `index` that achieves it.
 """
-function qql!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
+function qql!(vals::Vector{<:Real}, p::Vector{<:Real}, α::Real)
     0 < α < 1 || _bad_risk("Violated: 0 < α < 1")
     length(p) == length(vals) ||
         _bad_distribution("Violated: length(p) == length(vals)")
@@ -126,7 +126,7 @@ end
 
 
 # a function solely used to check if the stability checks work
-@stable function test_stability(x :: Integer)
+function test_stability(x :: Integer)
     if x < 0
         return float(x)
     else
