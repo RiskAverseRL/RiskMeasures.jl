@@ -35,6 +35,13 @@ an index does not exist, when `α = 1`, then returns `index = -1`.
 
 - `check_inputs=true`: check that the inputs are valid.
 - `fast=true`: use linear-time experimental implementation
+
+# Examples
+
+```jldoctest
+julia> VaR([1, 2, 3, 4, 5], [0.2, 0.2, 0.2, 0.2, 0.2], 0.5)
+(value = 3.0, index = 3)
+```
 """
 function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
     check_inputs=true, fast = true)

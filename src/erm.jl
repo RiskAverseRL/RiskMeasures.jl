@@ -13,6 +13,16 @@ Assumes a maximization problem. Using `β = 0` computes the expectation
 and `β = Inf` computes the essential infimum (smallest value with positive probability).
 
 More details: <https://en.wikipedia.org/wiki/Entropic_risk_measure>
+
+# Examples
+
+```jldoctest
+julia> ERM([1.0, 2.0, 3.0], [0.2, 0.3, 0.5], 0.0)   # β = 0 gives the expectation
+2.3
+
+julia> round(ERM([1.0, 2.0, 3.0], [0.2, 0.3, 0.5], 1.0); digits=4)
+1.9728
+```
 """
 function ERM end
 
@@ -54,6 +64,15 @@ when computing the exponential function. If not provided, the minimum value
 of `x̃` is used instead. 
 
 The value `β` must be positive.
+
+# Examples
+
+```jldoctest
+julia> round.(softmin([0.0, 1.0], [0.5, 0.5], 1.0); digits=3)
+2-element Vector{Float64}:
+ 0.731
+ 0.269
+```
 """
 function softmin end
 

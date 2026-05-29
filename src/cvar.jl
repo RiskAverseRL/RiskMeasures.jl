@@ -58,6 +58,13 @@ A named tuple with CVaR `value` and the `pmf` that achieves it.
 - `fast=false`: use linear-time experimental implementation 
 
 More details: <https://en.wikipedia.org/wiki/Expected_shortfall>
+
+# Examples
+
+```jldoctest
+julia> CVaR([1, 2, 3, 4, 5], [0.2, 0.2, 0.2, 0.2, 0.2], 0.4).value
+1.5
+```
 """
 function CVaR end
 

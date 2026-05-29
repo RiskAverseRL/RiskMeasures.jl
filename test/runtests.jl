@@ -15,6 +15,11 @@ import Random
 import Logging
 Logging.disable_logging(Logging.Warn)
 
+## === Run the doctests embedded in the docstrings
+import Documenter
+Documenter.DocMeta.setdocmeta!(RiskMeasures, :DocTestSetup, :(using RiskMeasures); recursive=true)
+Documenter.doctest(RiskMeasures; manual=false)
+
 
 function compute_VaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; kwargs...)
     v = VaR(x, pmf, α; fast=false, kwargs...)
@@ -374,7 +379,7 @@ end
     @test_throws ErrorException expectile(x̃, -1.0)
     @test_throws ErrorException expectile(x̃, 1.0)
     @test_throws ErrorException expectile(x̃, 0.0)
-    # Test monotonocity and sub/super-addativity
+    # Test monotonicity and sub/super-additivity
     X = rand(Float64, length(X))
     Y = rand(Float64, length(X))
     Z = rand(Float64, length(X))
@@ -386,7 +391,7 @@ end
     z̃ = DiscreteNonParametric(Z, p)
     σ̃ = DiscreteNonParametric(X + Z, p)
     for α ∈ 0.1:0.01:0.9
-        # check monotonocity
+        # check monotonicity
         @test compute_expectile(ỹ, α).value ≥ compute_expectile(x̃, α).value
         if α <= 0.5
             # check sub-additivity

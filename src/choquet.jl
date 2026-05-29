@@ -24,6 +24,13 @@ level `α ∈ [0,1]`.
 
 The runtime of this function can be quadratic depending on the evaluation of the
 capacity function.
+
+# Examples
+
+```jldoctest
+julia> choquet_risk([1, 2, 3, 4, 5], [0.2, 0.2, 0.2, 0.2, 0.2], cvar_capacity, 0.4).value
+1.5
+```
 """
 function choquet_risk(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, c::Function,
                       α::Real; check_inputs = true)
@@ -53,6 +60,13 @@ end
     cvar_distortion(t, α)
 
 Compute the choquet capacity function equivalent to CVaR at level `α`, to be used with `choquet_distortion_risk`.
+
+# Examples
+
+```jldoctest
+julia> cvar_distortion(0.2, 0.4)
+0.5
+```
 """
 function cvar_distortion(t::Real, α::Real)
     t ≥ zero(t) || error("t must be non-negative")
@@ -73,8 +87,15 @@ end
 
 Compute the choquet capacity function equivalent to CVaR at level `α`, to be used
 with `choquet_risk`. Here `S` is the list of indices into the `pmf`.
+
+# Examples
+
+```jldoctest
+julia> cvar_capacity([1], [0.2, 0.3, 0.5], 0.4)
+0.5
+```
 """
-cvar_capacity(S::AbstractVector{<:Integer}, pmf::AbstractVector{<:Real}, α::Real) = 
+cvar_capacity(S::AbstractVector{<:Integer}, pmf::AbstractVector{<:Real}, α::Real) =
     cvar_distortion(sum(pmf[i] for i in S), α)
 
 """
@@ -97,6 +118,13 @@ The choquet distortion risk measure solves
 
 More efficient than `choquet_risk` for law-invariant measures: `g` is evaluated
 on scalars rather than index sets, and cumulative probabilities are computed once.
+
+# Examples
+
+```jldoctest
+julia> choquet_distortion_risk([1, 2, 3, 4, 5], [0.2, 0.2, 0.2, 0.2, 0.2], cvar_distortion, 0.4).value
+1.5
+```
 """
 function choquet_distortion_risk(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real},
                                  g::Function, α::Real; check_inputs = true)
@@ -129,20 +157,19 @@ end
 """
     closure_c(ρ)
 
-Given a risk function `ρ(x, pmf) -> Real`, return a closure that computes the submodular function
-`c(S, P) = -ρ(-1_S, P)` where `1_S` is the indicator vector of an index set `S`. When `ρ` is
-coherent and comonotonic, then `choquet_risk` recovers the same risk.
+Given a risk function `ρ(values, pmf, α) -> Real`, return a closure that computes the submodular
+function `c(S, pmf, α) = -ρ(-1_S, pmf, α)` where `1_S` is the indicator vector of an index set `S`.
+When `ρ` is coherent and comonotonic, then `choquet_risk` recovers the same risk.
 
-```@example
-using RiskMeasures
+# Examples
 
-x = [1,3,-5,3]
-p = [0.3,0.2,0.3,0.2]
-α = 0.4
+```jldoctest
+julia> ρ(values, pmf, α) = CVaR(values, pmf, α).value;
 
-ρ(x, p, α) = CVaR(x, p, α).value
-choquet_risk(x, p, RiskMeasures.closure_c(ρ), α)
-CVaR(x, p, α)
+julia> c = closure_c(ρ);
+
+julia> choquet_risk([1, 2, 3, 4, 5], [0.2, 0.2, 0.2, 0.2, 0.2], c, 0.4).value
+1.5
 ```
 """
 function closure_c(ρ::Function)

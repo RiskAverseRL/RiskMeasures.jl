@@ -20,6 +20,13 @@ The function solves
 ```math
 \\argmin_{x \\in \\mathbb{R}} α \\mathbb{E}[(\\tilde{x} - x)^2_+] + (1-α) \\mathbb{E}[(\tilde{x} - x)^2_-]
 ```
+
+# Examples
+
+```jldoctest
+julia> round(expectile([1.0, 2.0, 3.0, 4.0, 5.0], [0.2, 0.2, 0.2, 0.2, 0.2], 0.25).value; digits=4)
+2.3333
+```
 """
 function expectile end
 

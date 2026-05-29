@@ -31,6 +31,13 @@ terminate with an error.
 
 # Returns
 - A named tuple with the computed UBSR `value`.
+
+# Examples
+
+```jldoctest
+julia> round(UBSR([1.0, 2.0, 3.0], [0.2, 0.3, 0.5], z -> z, 0.0).value; digits=4)   # u(z) = z, λ = 0 gives the expectation
+2.3
+```
 """
 function UBSR end
 
