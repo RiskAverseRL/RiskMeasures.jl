@@ -13,7 +13,7 @@ random variable `x` with probabilities `pmf`.
 
 The choquet risk measure solves
 ```math
-\\operatorname{choquet}(x, p, c, α} =
+\\operatorname{choquet}(x, p, c, α) =
 \\min \\{ x^T q \\mid
    q \\in \\Delta_n, q(\\mathcal{U}) \\le c(\\mathcal{U}, p, \\alpha), \\forall \\mathcal{U} \\}
 ```
@@ -27,7 +27,8 @@ capacity function.
 """
 function choquet_risk(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, c::Function,
                       α::Real; check_inputs = true)
-    check_inputs && (_check_α(α);  _check_pmf(x, pmf))
+    _check_α(α)
+    check_inputs && _check_pmf(x, pmf)
 
     indices = sortperm(x)
     T = float(eltype(pmf))
@@ -89,7 +90,7 @@ where `g : [0,1] × R → [0,1]` is a distortion function with `g(0, α) = 0` an
 
 The choquet distortion risk measure solves
 ```math
-\\operatorname{choquet}(x, p, c, α} =
+\\operatorname{choquet}(x, p, c, α) =
 \\min \\{ x^T q \\mid
    q \\in \\Delta_n, q(\\mathcal{U}) \\le g(p(\\mathcal{U}), \\alpha), \\forall \\mathcal{U} \\}
 ```
@@ -136,12 +137,12 @@ coherent and comonotonic, then `choquet_risk` recovers the same risk.
 using RiskMeasures
 
 x = [1,3,-5,3]
-p = [0.2,0.2,0.3,0.2]
+p = [0.3,0.2,0.3,0.2]
 α = 0.4
 
 ρ(x, p, α) = CVaR(x, p, α).value
-choquet_risk(x, p, RiskMeasures.closure_c(ρ))
-CVaR(x, p, α).value
+choquet_risk(x, p, RiskMeasures.closure_c(ρ), α)
+CVaR(x, p, α)
 ```
 """
 function closure_c(ρ::Function)

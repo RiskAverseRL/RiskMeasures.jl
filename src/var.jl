@@ -7,7 +7,9 @@ Risk must satisfy ``α ∈ [0,1]`` and `α=0.5` computes the median and `α=0` c
 essential infimum (smallest value with positive probability) and `α=1` returns infinity.
 
 Solves for
-``\\max \\{t ∈ \\mathbb{R} : \\mathbb{P}[x̃ < t] \\le α \\}``
+```math
+\\max \\{t ∈ \\mathbb{R} : \\mathbb{P}[x̃ < t] \\le α \\}
+```
 
 In general, this function is neither convex nor concave in the random variable x̃.
 """

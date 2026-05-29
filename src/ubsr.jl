@@ -27,7 +27,7 @@ terminate with an error.
 
 # Keyword Arguments:
 - `zmin=-1e6`, `zmax=1e6`: Lower and upper bounds for the bisection search.
-- `tol=1e-7`: Tolerance for convergence of the bisection method.
+- `tol=1e-6`: Tolerance for convergence of the bisection method.
 
 # Returns
 - A named tuple with the computed UBSR `value`.

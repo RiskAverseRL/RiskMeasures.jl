@@ -374,7 +374,7 @@ end
     @test_throws ErrorException expectile(x̃, -1.0)
     @test_throws ErrorException expectile(x̃, 1.0)
     @test_throws ErrorException expectile(x̃, 0.0)
-    # Test monotonocity and subaddativity
+    # Test monotonocity and sub/super-addativity
     X = rand(Float64, length(X))
     Y = rand(Float64, length(X))
     Z = rand(Float64, length(X))
