@@ -1,20 +1,26 @@
 """
+
+    choquet_risk(x, pmf, c, α)
+
+Compute the risk measure for a given choquet capacity function `c` and
+random variable `x̃`.
+
+
     choquet_risk(x, pmf, c, α)
 
 Compute the risk measure for a given choquet capacity function `c` and
 random variable `x` with probabilities `pmf`.
 
 The choquet capacity function `c` that returns a non-negative value
-and is parametrized by a level `α ∈ [0,1]`.
+and is parametrized by the random variable `S`, a probablily mass function `pmf`, and
+level `α ∈ [0,1]`.
 
 The runtime of this function can be quadratic depending on the evaluation of the
 capacity function.
 """
 function choquet_risk(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, c::Function,
                       α::Real; check_inputs = true)
-
-    check_inputs && _check_α(α)
-    check_inputs && _check_pmf(x, pmf)
+    check_inputs && (_check_α(α);  _check_pmf(x, pmf))
 
     indices = sortperm(x)
     T = float(eltype(pmf))
@@ -27,6 +33,11 @@ function choquet_risk(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, c:
         c_prev = c_curr
     end
     (value = ξ'*x, pmf = ξ)
+end
+
+function choquet_risk(x̃, c, α; kwargs...)
+    supp, pmf = rv2pmf(x̃)
+    choquet_risk(supp, pmf, c, α; kwargs...)
 end
 
 
@@ -47,20 +58,39 @@ end
 
 
 """
-    cvar_capacity(S, pmf, α)
+    cvar_distortion(t, α)
 
-choquet capacity function equivalent to CVaR at level `α`.
-Returns `min(sum(pmf[S]) / α, 1)`, which is the distorted probability `g(P(S))`
-with distortion `g(t) = min(t/α, 1)`.
+Compute the choquet capacity function equivalent to CVaR at level `α`, to be used with `choquet_distortion_risk`.
 """
-function cvar_capacity(S::AbstractVector{<:Integer}, pmf::AbstractVector{<:Real}, α::Real)
-    T = float(eltype(pmf))
-    isempty(S) && return zero(T)
-    min(sum(pmf[i] for i in S) / α, one(T))
+function cvar_distortion(t::Real, α::Real)
+    t ≥ zero(t) || error("t must be non-negative")
+    
+    if zero(α) < α ≤ one(α)
+        min(t / α, one(t))
+    elseif α == zero(α) && t > zero(t)
+        one(t)
+    elseif α == zero(α) && t == zero(t)
+        zero(t)
+    else
+        error("α must be in [0,1]")
+    end
 end
 
+"""
+    cvar_capacity(S, pmf, α)
+
+Compute the choquet capacity function equivalent to CVaR at level `α`, to be used
+with `choquet_risk`. Here `S` is the list of indices into the `pmf`.
+"""
+cvar_capacity(S::AbstractVector{<:Integer}, pmf::AbstractVector{<:Real}, α::Real) = 
+    cvar_distortion(sum(pmf[i] for i in S), α)
 
 """
+    choquet_distortion_risk(x̃, g, α)
+
+Compute the choquet risk measure for a law-invariant capacity `c(A) = g(P[A])`,
+where `g : [0,1] → [0,1]` is a distortion function with `g(0) = 0` and `g(1) = 1`.
+
     choquet_distortion_risk(x, pmf, g, α)
 
 Compute the choquet risk measure for a law-invariant capacity `c(A) = g(P[A])`,
@@ -71,8 +101,7 @@ on scalars rather than index sets, and cumulative probabilities are computed onc
 """
 function choquet_distortion_risk(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real},
                                  g::Function, α::Real; check_inputs = true)
-    check_inputs && _check_α(α)
-    check_inputs && _check_pmf(x, pmf)
+    check_inputs && (_check_α(α); _check_pmf(x, pmf))
 
     indices = sortperm(x)
     T = float(eltype(pmf))
@@ -90,9 +119,9 @@ function choquet_distortion_risk(x::AbstractVector{<:Real}, pmf::AbstractVector{
 end
 
 
-"""
-    cvar_distortion(t, α)
+function choquet_distortion_risk(x̃, c, α; kwargs...)
+    supp, pmf = rv2pmf(x̃)
+    choquet_distortion_risk(supp, pmf, c, α; kwargs...)
+end
 
-Distortion function equivalent to CVaR at level `α`: `min(t / α, 1)`.
-"""
-cvar_distortion(t::Real, α::Real) = min(t / α, one(t))
+

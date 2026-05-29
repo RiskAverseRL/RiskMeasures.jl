@@ -14,39 +14,47 @@ import Random
 function compute_VaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; kwargs...)
     v = VaR(x, pmf, α; fast=false, kwargs...)
     v_fast = VaR(x, pmf, α; fast=true, kwargs...)
+    v_ubsr = UBSR(x, pmf, z -> (z ≥ 0 ? 1 : 0), 1-α)
     @test v.value ≈ v_fast.value
     @test v.index < 1 || x[v.index] == v.value
     @test v.index < 1 ||x[v_fast.index] == v_fast.value
     @test v.index < 1 ? v_fast.index == v.index == -1 : true
+    @test v_ubsr.value ≈ v.value atol = 0.01
     return v
 end
 
 function compute_VaR(x̃, α; kwargs...)
     v = VaR(x̃, α; fast=false, kwargs...)
     v_fast = VaR(x̃, α; fast=true, kwargs...)
+    v_ubsr = UBSR(x̃, z -> (z ≥ 0 ? 1 : 0), 1-α)
     @test v.value ≈ v_fast.value
     @test v.value ≈ mean(v.pmf)
     @test mean(v.pmf) ≈ mean(v_fast.pmf)
+    @test v_ubsr.value ≈ v.value atol = 0.01
     return v
 end
 
 function compute_CVaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; kwargs...)
     c = CVaR(x, pmf, α; fast=false, kwargs...)
     c_fast = CVaR(x, pmf, α; fast=true, kwargs...)
+    c_choquet = choquet_risk(x, pmf, cvar_capacity, α)
+    c_distortion = choquet_distortion_risk(x, pmf, cvar_distortion, α)
     @test c.value ≈ c_fast.value
     @test c.pmf ≈ c_fast.pmf atol = 0.01
-    #c_choquet = choquet_risk(x, pmf, cvar_capacity, α)
-    #@test c_choquet ≈ c.value atol = 1e-10
-    #c_distortion = choquet_distortion_risk(x, pmf, cvar_distortion, α)
-    #@test c_distortion ≈ c.value atol = 1e-10
+    @test c_choquet.value ≈ c.value atol = 1e-10
+    @test c_distortion.value ≈ c.value atol = 1e-10
     return c
 end
 
 function compute_CVaR(x̃, α; kwargs...)
     c = CVaR(x̃, α; fast=false, kwargs...)
     c_fast = CVaR(x̃, α; fast=true, kwargs...)
+    c_choquet = choquet_risk(x̃, cvar_capacity, α)
+    c_distortion = choquet_distortion_risk(x̃, cvar_distortion, α)
     @test c.value ≈ c_fast.value
     @test mean(c.pmf) ≈ mean(c_fast.pmf)
+    @test c_choquet.value ≈ c.value atol = 1e-10
+    @test c_distortion.value ≈ c.value atol = 1e-10
     return c
 end
 
@@ -62,11 +70,9 @@ function compute_EVaR(x̃, α; kwargs...)
 end
 
 function compute_expectile(x̃, α; kwargs...)
-    expectile(x̃, α; kwargs...)
-end
-
-function compute_UBSR(x, p, u, λ; kwargs...)
-    UBSR(x, p, u, λ; kwargs...)
+    v = expectile(x̃, α; kwargs...)
+    # TODO : add the comparison with
+    return v
 end
 
 @testset "ERM" begin
@@ -378,7 +384,7 @@ end
 @testset "UBSR Test" begin
     function test_UBSR(x, p)
       u = (z) -> z
-      v = compute_UBSR(x, p, u, 0)
+      v = UBSR(x, p, u, 0)
       @test v.value ≈ sum(x .* p) atol=1e-5
       dnp = DiscreteNonParametric(x, p)
       v2 = UBSR(dnp, u, 0)
@@ -387,16 +393,16 @@ end
       # ERM
       β = 0.5
       u = (z) -> (-exp(-β * z))
-      v = compute_UBSR(x, p, u, -1)
+      v = UBSR(x, p, u, -1)
       @test v.value ≈ ERM(x, p, β) atol=1e-5
       # VaR
       α = 0.9
       u = (z) -> (z ≥ 0 ? 1 : 0)
-      v = compute_UBSR(x, p, u, α)
+      v = UBSR(x, p, u, α)
       @test v.value ≈ compute_VaR(x, p, 1-α).value atol=1e-5
       # Expectile
       u = (z) -> (α * max(z, 0) - (1-α) * max(-z, 0))
-      v = compute_UBSR(x, p, u, 0)
+      v = UBSR(x, p, u, 0)
       @test v.value ≈ compute_expectile(dnp, α).value atol=1e-5
     end
     x = [1.0, 2.0, 3.0]
