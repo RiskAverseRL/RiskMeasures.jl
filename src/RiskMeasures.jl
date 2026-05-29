@@ -18,6 +18,6 @@ end
 
 export essinf, ERM, softmin, VaR, CVaR, EVaR, expectile, UBSR
 export choquet_risk, closure_c, cvar_capacity
-export choquet_distortion_risk, cvar_distortion
+export choquet_distortion_risk, cvar_distortion, closure_c
 
 end

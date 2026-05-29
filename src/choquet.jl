@@ -11,6 +11,13 @@ random variable `x̃`.
 Compute the risk measure for a given choquet capacity function `c` and
 random variable `x` with probabilities `pmf`.
 
+The choquet risk measure solves
+```math
+\\operatorname{choquet}(x, p, c, α} =
+\\min \\{ x^T q \\mid
+   q \\in \\Delta_n, q(\\mathcal{U}) \\le c(\\mathcal{U}, p, \\alpha), \\forall \\mathcal{U} \\}
+```
+
 The choquet capacity function `c` that returns a non-negative value
 and is parametrized by the random variable `S`, a probability mass function `pmf`, and
 level `α ∈ [0,1]`.
@@ -38,22 +45,6 @@ end
 function choquet_risk(x̃, c, α; kwargs...)
     supp, pmf = rv2pmf(x̃)
     choquet_risk(supp, pmf, c, α; kwargs...)
-end
-
-
-"""
-    closure_c(ρ)
-
-Given a risk measure function `ρ`, return a closure that computes the submodular function
-`c(S) = -ρ(-1_S)` where `1_S` is the indicator vector of an index set `S`.
-"""
-function closure_c(ρ::Function)
-    function (S::AbstractVector{<:Integer}, pmf::AbstractVector{<:Real}, alpha::Real)
-        T = float(eltype(pmf))
-        one_tilde = zeros(T, length(pmf))
-        one_tilde[S] .= one(T)
-        -ρ(-one_tilde, pmf, alpha)
-    end
 end
 
 
@@ -89,19 +80,27 @@ cvar_capacity(S::AbstractVector{<:Integer}, pmf::AbstractVector{<:Real}, α::Rea
     choquet_distortion_risk(x̃, g, α)
 
 Compute the choquet risk measure for a law-invariant capacity `c(A) = g(P[A])`,
-where `g : [0,1] → [0,1]` is a distortion function with `g(0) = 0` and `g(1) = 1`.
+where `g : [0,1] × R → [0,1]` is a distortion function with `g(0, α) = 0` and `g(1, α) = 1`.
 
     choquet_distortion_risk(x, pmf, g, α)
 
 Compute the choquet risk measure for a law-invariant capacity `c(A) = g(P[A])`,
-where `g : [0,1] → [0,1]` is a distortion function with `g(0) = 0` and `g(1) = 1`.
+where `g : [0,1] × R → [0,1]` is a distortion function with `g(0, α) = 0` and `g(1, α) = 1`.
+
+The choquet distortion risk measure solves
+```math
+\\operatorname{choquet}(x, p, c, α} =
+\\min \\{ x^T q \\mid
+   q \\in \\Delta_n, q(\\mathcal{U}) \\le g(p(\\mathcal{U}), \\alpha), \\forall \\mathcal{U} \\}
+```
 
 More efficient than `choquet_risk` for law-invariant measures: `g` is evaluated
 on scalars rather than index sets, and cumulative probabilities are computed once.
 """
 function choquet_distortion_risk(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real},
                                  g::Function, α::Real; check_inputs = true)
-    check_inputs && (_check_α(α); _check_pmf(x, pmf))
+    _check_α(α)
+    check_inputs && _check_pmf(x, pmf)
 
     indices = sortperm(x)
     T = float(eltype(pmf))
@@ -125,3 +124,31 @@ function choquet_distortion_risk(x̃, c, α; kwargs...)
 end
 
 
+
+"""
+    closure_c(ρ)
+
+Given a risk function `ρ(x, pmf) -> Real`, return a closure that computes the submodular function
+`c(S, P) = -ρ(-1_S, P)` where `1_S` is the indicator vector of an index set `S`. When `ρ` is
+coherent and comonotonic, then `choquet_risk` recovers the same risk.
+
+```@example
+using RiskMeasures
+
+x = [1,3,-5,3]
+p = [0.2,0.2,0.3,0.2]
+α = 0.4
+
+ρ(x, p, α) = CVaR(x, p, α).value
+choquet_risk(x, p, RiskMeasures.closure_c(ρ))
+CVaR(x, p, α).value
+```
+"""
+function closure_c(ρ::Function)
+    function (S::AbstractVector{<:Integer}, pmf::AbstractVector{<:Real}, α::Real)
+        T = float(eltype(pmf))
+        one_tilde = zeros(T, length(pmf))
+        one_tilde[S] .= one(T)
+        -ρ(-one_tilde, pmf, α)
+    end
+end

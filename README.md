@@ -37,7 +37,10 @@ CVaR(x, p, 0.1)  # conditional value at risk
 EVaR(x, p, 0.1)  # entropic value at risk
 ERM(x, p, 0.1)   # entropic risk measure
 expectile(x, p, 0.1)   # expectile risk measure
-UBSR(x, p, 0.1)   # utility-based shortfall risk measure with utility function u
+UBSR(x, p, z -> (z ≥ 0 ? 0 : -1), 0.1)  # utility-based shortfall risk that equals to VaR
+β = 0.1; UBSR(x, p, z -> (-exp(-β * z)), 0.1)  # utility-based shortfall risk that equals to ERM
+choquet_risk(x, p, cvar_capacity, 0.5) # choquet risk measure
+choquet_distortion_risk(x, p, cvar_distortion, 0.5) # law-invariant choquet (distortion) risk measure
 ```
 
 ### Using random variables
@@ -51,13 +54,12 @@ P = [0.1, 0.1, 0.2, 0.5, 0.1]
 x̃ = DiscreteNonParametric(X, P)
 
 VaR(x̃, 0.1)   # value at risk
-VaR(X, P, 0.1)   # value at risk
 CVaR(x̃, 0.1)  # conditional value at risk
 EVaR(x̃, 0.1)  # entropic value at risk
 ERM(x̃, 0.1)   # entropic risk measure
 expectile(x̃, 0.1)   # expectile risk measure
 UBSR(x̃, z -> (z ≥ 0 ? 0 : -1), 0.1)  # utility-based shortfall risk that equals to VaR
-UBSR(x̃, z -> (-exp(-β * z)), 0.1)  # utility-based shortfall risk that equals to ERM
+β = 0.1; UBSR(x̃, z -> (-exp(-β * z)), 0.1)  # utility-based shortfall risk that equals to ERM
 choquet_risk(x̃, cvar_capacity, 0.5) # choquet risk measure
 choquet_distortion_risk(x̃, cvar_distortion, 0.5) # law-invariant choquet (distortion) risk measure
 ```

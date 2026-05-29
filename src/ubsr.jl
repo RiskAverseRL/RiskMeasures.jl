@@ -36,7 +36,7 @@ function UBSR end
 
 function UBSR(x::AbstractVector{<:Real}, p::AbstractVector{<:Real}, u::Function, λ::Real;
               zmin::Float64=-1e6, zmax::Float64=1e6, tol::Float64=1e-6, check_inputs=true)
-    check_inputs && _check_pmf(p)
+    check_inputs && _check_pmf(x, p)
     zmin < zmax || error("zmin < zmax is violated")
     
     g(z) = p' * u.(x .- z) # is non-increasing
@@ -45,7 +45,7 @@ function UBSR(x::AbstractVector{<:Real}, p::AbstractVector{<:Real}, u::Function,
     g(zmin) < -λ && (@warn "zmin is too high: E[u(x - z_min)] < λ." ; return (value=-Inf,))
     g(zmax) ≥ -λ && (@warn "zmax is too low: E[u(x - z_max)] > λ."; return (value=Inf,))
 
-    g(zmin) < g(zmax) && error("Function g is not monotone: $(g(zmin)) < $(g(gmax)).")
+    g(zmin) < g(zmax) && error("Function g is not monotone: $(g(zmin)) < $(g(zmax)).")
     
     # Bisection Method
     while (zmax - zmin) > tol

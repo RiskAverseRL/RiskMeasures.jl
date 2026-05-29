@@ -80,6 +80,33 @@ function compute_expectile(x̃, α; kwargs...)
     return v
 end
 
+
+
+@testset "Mixture model test" begin
+    X = [1, 5, 6, 7, 20]
+    P = [0.1, 0.1, 0.2, 0.5, 0.1]
+    x̃ = DiscreteNonParametric(X, P)
+
+    m̃ = MixtureModel([x̃, x̃], [0.3, 0.7])
+    
+    β = 0.1
+
+    @test compute_VaR(x̃, 0.1).value ≈ compute_VaR(m̃, 0.1).value
+    @test compute_CVaR(x̃, 0.1).value ≈ compute_CVaR(m̃, 0.1).value
+    @test compute_EVaR(x̃, 0.1).value ≈ compute_EVaR(m̃, 0.1).value
+    @test ERM(x̃, 0.1) ≈ ERM(m̃, 0.1)
+    @test compute_expectile(x̃, 0.1).value ≈ compute_expectile(m̃, 0.1).value
+    @test UBSR(x̃, z -> (z ≥ 0 ? 0 : -1), 0.1).value ≈
+        UBSR(m̃, z -> (z ≥ 0 ? 0 : -1), 0.1).value
+    @test UBSR(x̃, z -> (-exp(-β * z)), 0.1).value ≈
+        UBSR(m̃, z -> (-exp(-β * z)), 0.1).value
+    @test choquet_risk(x̃, cvar_capacity, 0.5).value ≈
+        choquet_risk(m̃, cvar_capacity, 0.5).value
+    @test choquet_distortion_risk(x̃, cvar_distortion, 0.5).value ≈
+        choquet_distortion_risk(m̃, cvar_distortion, 0.5).value
+end
+
+
 @testset "ERM" begin
     X = [2.0, 5.0, 6.0, 9.0, 3.0, 1.0]
     p = [0.1, 0.1, 0.2, 0.5, 0.1, 0.0]
@@ -427,6 +454,20 @@ end
     p .= p ./ sum(p)
     test_UBSR(x, p)
 end
+
+@testset "Choquet risk capacity" begin
+    x = [1,3,-5,3]
+    p = [0.3,0.2,0.3,0.2]
+    α = 0.4
+
+    ρ(x, p, α) = CVaR(x, p, α).value
+    v1 = choquet_risk(x, p, RiskMeasures.closure_c(ρ), α)
+    v2 = CVaR(x, p, α)
+
+    @test v1.value ≈ v2.value
+    @test v1.pmf ≈ v2.pmf
+end
+
 
 @testset "Check type stability" begin
     @test_throws DispatchDoctor.TypeInstabilityError RiskMeasures.test_stability(1)
