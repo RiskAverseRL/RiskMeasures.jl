@@ -9,6 +9,9 @@ The following risk measures are currently supported
 - CVaR: Conditional value at risk
 - ERM: Entropic risk measure
 - EVaR: Entropic value at risk
+- expectile: A coherent elicitable risk measure
+- UBSR: Utility-based shortfall risk for a given utility
+- Choquet: Choquet and distortion risk measures for a choquet capacity and distortion functions
 
 When supported, the risk measure returns also the optimal distribution 
 
@@ -20,36 +23,82 @@ When supported, the risk measure returns also the optimal distribution
 ## Supported distributions
 
 - General discrete distributions (`DiscreteNonParametric`)
+- Transformed discrete distributions ('DiscreteAffineDistribution')
+- Mixtures of random variables ('MixtureModel')
 
-**Warning**: This is package is in development and the computed values should be treated with caution. 
 
 ## Examples
+
+### Using arrays
+
+```Julia
+using RiskMeasures
+
+x = [1, 5, 6, 7, 20]
+p = [0.1, 0.1, 0.2, 0.5, 0.1]
+
+VaR(x, p, 0.1)   # value at risk
+CVaR(x, p, 0.1)  # conditional value at risk
+EVaR(x, p, 0.1)  # entropic value at risk
+ERM(x, p, 0.1)   # entropic risk measure
+expectile(x, p, 0.1)   # expectile risk measure
+UBSR(x, p, z -> (z ≥ 0 ? 0 : -1), 0.1)  # utility-based shortfall risk that equals to VaR
+β = 0.1; UBSR(x, p, z -> (-exp(-β * z)), 0.1)  # utility-based shortfall risk that equals to ERM
+choquet_risk(x, p, cvar_capacity, 0.5) # choquet risk measure
+choquet_distortion_risk(x, p, cvar_distortion, 0.5) # law-invariant choquet (distortion) risk measure
+```
+
+### Using random variables
+
+```Julia
+using RiskMeasures
+using Distributions
+
+X = [1, 5, 6, 7, 20]
+P = [0.1, 0.1, 0.2, 0.5, 0.1]
+x̃ = DiscreteNonParametric(X, P)
+
+VaR(x̃, 0.1)   # value at risk
+CVaR(x̃, 0.1)  # conditional value at risk
+EVaR(x̃, 0.1)  # entropic value at risk
+ERM(x̃, 0.1)   # entropic risk measure
+expectile(x̃, 0.1)   # expectile risk measure
+UBSR(x̃, z -> (z ≥ 0 ? 0 : -1), 0.1)  # utility-based shortfall risk that equals to VaR
+β = 0.1; UBSR(x̃, z -> (-exp(-β * z)), 0.1)  # utility-based shortfall risk that equals to ERM
+choquet_risk(x̃, cvar_capacity, 0.5) # choquet risk measure
+choquet_distortion_risk(x̃, cvar_distortion, 0.5) # law-invariant choquet (distortion) risk measure
+```
+
+### Using transformed random variables
+
+We can also compute risk measures of transformed random variables
 
 ```Julia
 using RiskMeasures
 using Distributions
 
 x̃ = DiscreteNonParametric([1, 5, 6, 7, 20], [0.1, 0.1, 0.2, 0.5, 0.1])
- 
-VaR(x̃, 0.1)   # value at risk
-CVaR(x̃, 0.1)  # conditional value at risk
-EVaR(x̃, 0.1)  # entropic value at risk
-ERM(x̃, 0.1)   # entropic risk measure
-expectile(x̃, 0.1)  # expectile
+VaR(5*x̃ + 10, 0.1)   # value at risk
+CVaR(x̃ - 10, 0.1)    # conditional value at risk
 ```
 
-We can also compute risk measures of transformed random variables
+### Using mixture models
 
 ```Julia
-VaR(5*x̃ + 10, 0.1)   # value at risk
-CVaR(x̃ - 10, 0.1)  # conditional value at risk
+using RiskMeasures
+using Distributions
+
+x̃ = DiscreteNonParametric([-5, -3, 2, 7, 33], [0., 0.2, 0.1, 0.5, 0.2])
+ỹ = DiscreteNonParametric([1, 5, 6, 7, 20], [0.1, 0.1, 0.2, 0.5, 0.1])
+m̃ = MixtureModel([x̃, ỹ], [0.3, 0.7])
+
+VaR(m̃, 0.4)
+CVaR(m̃, 0.4)
 ```
 
-Many methods methods `VaR`, `CVaR`, and `EVaR` also return additional statistics and values, such as the distribution that attains the risk value and the optimal `β` in EVaR. These are returned as named tuples.
+Please see the documentation and unit tests for more examples of how this package can be used to compute the risk. 
 
-## See Also
-
-- [MarketRisk.jl](https://github.com/mpkuperman/MarketRisk.jl)
+Most risk measure functions return tuples that include additional statistics and values. For example, this includes the distribution that attains the risk value and the optimal ERM-`β` in EVaR. 
 
 
 # Functions

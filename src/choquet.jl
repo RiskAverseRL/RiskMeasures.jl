@@ -19,7 +19,7 @@ The choquet risk measure solves
 ```
 
 The choquet capacity function `c` that returns a non-negative value
-and is parametrized by the random variable `S`, a probability mass function `pmf`, and
+and is parametrized by the list of indices `S`, a probability mass function `pmf`, and
 level `α ∈ [0,1]`.
 
 The runtime of this function can be quadratic depending on the evaluation of the
@@ -52,7 +52,9 @@ end
 
 function choquet_risk(x̃, c, α; kwargs...)
     supp, pmf = rv2pmf(x̃)
-    choquet_risk(supp, pmf, c, α; kwargs...)
+    v1 = choquet_risk(supp, pmf, c, α; kwargs...)
+    ỹ = DiscreteNonParametric(supp, v1.pmf)
+    (value = v1.value, pmf = ỹ)
 end
 
 
@@ -147,9 +149,11 @@ function choquet_distortion_risk(x::AbstractVector{<:Real}, pmf::AbstractVector{
 end
 
 
-function choquet_distortion_risk(x̃, c, α; kwargs...)
+function choquet_distortion_risk(x̃, g, α; kwargs...)
     supp, pmf = rv2pmf(x̃)
-    choquet_distortion_risk(supp, pmf, c, α; kwargs...)
+    v1 = choquet_distortion_risk(supp, pmf, g, α; kwargs...)
+    ỹ = DiscreteNonParametric(supp, v1.pmf)
+    (value = v1.value, pmf = ỹ)
 end
 
 

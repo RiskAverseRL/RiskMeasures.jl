@@ -15,11 +15,13 @@ The following risk measures are currently supported
 - CVaR: Conditional value at risk
 - ERM: Entropic risk measure
 - EVaR: Entropic value at risk
-- expectile: Expectile
+- expectile: A coherent elicitable risk measure
+- UBSR: Utility-based shortfall risk for a given utility
+- Choquet: Choquet and distortion risk measures for a choquet capacity and distortion functions
 
 All risk measures, except ERM, are non-decreasing in risk level alpha. The ERM is non-increasing in level beta.
 
-The package currently only supports random variables with descrete probability distributions, but support for continuous probabilty distributions is planned for the future. 
+The package currently only supports random variables with discrete probability distributions, but support for continuous probability distributions is planned for the future. 
 
 
 ## Examples
@@ -96,11 +98,12 @@ Please see the unit tests for examples of how this package can be used to comput
 
 ## Future development plans:
 
+- Additional common risk measures: Mean semi-deviation, 
 - Analytical computation for special distributions, like Normal and others
-- Add an optional intergration with Mosek's exponential cones to support computation of EVaR. 
-- General risk measure construction from utility functions, such as CE, OCE, utility shortfall risk measures. 
-- Phi-divergence risk mesures for any phi-divergence function
+- Add an optional integration with Mosek's exponential cones to support computation of EVaR. 
+- Phi-divergence risk measures for any phi-divergence function
 
 ## See Also
 
-- [MarketRisk.jl](https://github.com/mpkuperman/MarketRisk.jl)
+- [Another RiskMeasures.jl](https://github.com/rubsc/RiskMeasures.jl)
+- [ActuaryUtilities.jl](https://github.com/JuliaActuary/ActuaryUtilities.jl)

@@ -82,7 +82,7 @@ function softmin(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real},
     check_inputs && _check_pmf(values, pmf)
 
     if β > zero(β)
-        # because softmin is translation invariant add the subtract the smallest value
+        # because softmin is translation invariant, subtracting the smallest value
         # ensures that values ≥ 0
         x̃min = isfinite(x̃min) ? x̃min : minimum(values)
         np = similar(pmf)

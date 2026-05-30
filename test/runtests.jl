@@ -62,6 +62,9 @@ function compute_CVaR(x̃, α; kwargs...)
     c_choquet = choquet_risk(x̃, cvar_capacity, α)
     c_distortion = choquet_distortion_risk(x̃, cvar_distortion, α)
     @test c.value ≈ c_fast.value
+    @test c.value ≈ mean(c.pmf)
+    @test c_choquet.value ≈ mean(c_choquet.pmf)
+    @test c_distortion.value ≈ mean(c_distortion.pmf)
     @test mean(c.pmf) ≈ mean(c_fast.pmf)
     @test c_choquet.value ≈ c.value atol = 1e-10
     @test c_distortion.value ≈ c.value atol = 1e-10
