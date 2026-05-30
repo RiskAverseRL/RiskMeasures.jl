@@ -1,5 +1,7 @@
 using Documenter, RiskMeasures
 
+DocMeta.setdocmeta!(RiskMeasures, :DocTestSetup, :(using RiskMeasures); recursive=true)
+
 makedocs(sitename="RiskMeasures.jl",
          modules = [RiskMeasures],
          format = Documenter.HTML(; prettyurls = get(ENV, "CI", nothing) == "true"),

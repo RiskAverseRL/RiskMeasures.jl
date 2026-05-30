@@ -5,7 +5,7 @@ using Distributions
     expectile(x̃, α)
 
 Compute the expectile risk measure of the random variable `x̃` with risk level
-`α ∈ (0,1)`. When `α = 1/2`, the function computes the expected value.
+`α ∈ (0,1)`. When `α = 1/2`, the function computes the expected value. 
 
     expectile(values, pmf, α; ...)
 
@@ -19,6 +19,13 @@ Note that the range for `α` does not include `0` or `1`.
 The function solves
 ```math
 \\argmin_{x \\in \\mathbb{R}} α \\mathbb{E}[(\\tilde{x} - x)^2_+] + (1-α) \\mathbb{E}[(\tilde{x} - x)^2_-]
+```
+
+# Examples
+
+```jldoctest
+julia> round(expectile([1.0, 2.0, 3.0, 4.0, 5.0], [0.2, 0.2, 0.2, 0.2, 0.2], 0.25).value; digits=4)
+2.3333
 ```
 """
 function expectile end

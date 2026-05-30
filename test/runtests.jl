@@ -11,42 +11,60 @@ using LinearAlgebra: ones
 using Distributions
 import Random
 
+## === Disable warnings
+import Logging
+Logging.disable_logging(Logging.Warn)
+
+## === Run the doctests embedded in the docstrings
+import Documenter
+Documenter.DocMeta.setdocmeta!(RiskMeasures, :DocTestSetup, :(using RiskMeasures); recursive=true)
+Documenter.doctest(RiskMeasures; manual=false)
+
+
 function compute_VaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; kwargs...)
     v = VaR(x, pmf, α; fast=false, kwargs...)
     v_fast = VaR(x, pmf, α; fast=true, kwargs...)
+    v_ubsr = UBSR(x, pmf, z -> (z ≥ 0 ? 0 : -1), α)
     @test v.value ≈ v_fast.value
     @test v.index < 1 || x[v.index] == v.value
     @test v.index < 1 ||x[v_fast.index] == v_fast.value
     @test v.index < 1 ? v_fast.index == v.index == -1 : true
+    @test v_ubsr.value ≈ v.value atol = 0.01
     return v
 end
 
 function compute_VaR(x̃, α; kwargs...)
     v = VaR(x̃, α; fast=false, kwargs...)
     v_fast = VaR(x̃, α; fast=true, kwargs...)
+    v_ubsr = UBSR(x̃, z -> (z ≥ 0 ? 0 : -1), α)
     @test v.value ≈ v_fast.value
     @test v.value ≈ mean(v.pmf)
     @test mean(v.pmf) ≈ mean(v_fast.pmf)
+    @test v_ubsr.value ≈ v.value atol = 0.01
     return v
 end
 
 function compute_CVaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real; kwargs...)
     c = CVaR(x, pmf, α; fast=false, kwargs...)
     c_fast = CVaR(x, pmf, α; fast=true, kwargs...)
+    c_choquet = choquet_risk(x, pmf, cvar_capacity, α)
+    c_distortion = choquet_distortion_risk(x, pmf, cvar_distortion, α)
     @test c.value ≈ c_fast.value
     @test c.pmf ≈ c_fast.pmf atol = 0.01
-    #c_choquet = choquet_risk(x, pmf, cvar_capacity, α)
-    #@test c_choquet ≈ c.value atol = 1e-10
-    #c_distortion = choquet_distortion_risk(x, pmf, cvar_distortion, α)
-    #@test c_distortion ≈ c.value atol = 1e-10
+    @test c_choquet.value ≈ c.value atol = 1e-10
+    @test c_distortion.value ≈ c.value atol = 1e-10
     return c
 end
 
 function compute_CVaR(x̃, α; kwargs...)
     c = CVaR(x̃, α; fast=false, kwargs...)
     c_fast = CVaR(x̃, α; fast=true, kwargs...)
+    c_choquet = choquet_risk(x̃, cvar_capacity, α)
+    c_distortion = choquet_distortion_risk(x̃, cvar_distortion, α)
     @test c.value ≈ c_fast.value
     @test mean(c.pmf) ≈ mean(c_fast.pmf)
+    @test c_choquet.value ≈ c.value atol = 1e-10
+    @test c_distortion.value ≈ c.value atol = 1e-10
     return c
 end
 
@@ -62,12 +80,37 @@ function compute_EVaR(x̃, α; kwargs...)
 end
 
 function compute_expectile(x̃, α; kwargs...)
-    expectile(x̃, α; kwargs...)
+    v = expectile(x̃, α; kwargs...)
+    # TODO : add the comparison with
+    return v
 end
 
-function compute_UBSR(x, p, u, λ; kwargs...)
-    UBSR(x, p, u, λ; kwargs...)
+
+
+@testset "Mixture model test" begin
+    X = [1, 5, 6, 7, 20]
+    P = [0.1, 0.1, 0.2, 0.5, 0.1]
+    x̃ = DiscreteNonParametric(X, P)
+
+    m̃ = MixtureModel([x̃, x̃], [0.3, 0.7])
+    
+    β = 0.1
+
+    @test compute_VaR(x̃, 0.1).value ≈ compute_VaR(m̃, 0.1).value
+    @test compute_CVaR(x̃, 0.1).value ≈ compute_CVaR(m̃, 0.1).value
+    @test compute_EVaR(x̃, 0.1).value ≈ compute_EVaR(m̃, 0.1).value
+    @test ERM(x̃, 0.1) ≈ ERM(m̃, 0.1)
+    @test compute_expectile(x̃, 0.1).value ≈ compute_expectile(m̃, 0.1).value
+    @test UBSR(x̃, z -> (z ≥ 0 ? 0 : -1), 0.1).value ≈
+        UBSR(m̃, z -> (z ≥ 0 ? 0 : -1), 0.1).value
+    @test UBSR(x̃, z -> (-exp(-β * z)), 0.1).value ≈
+        UBSR(m̃, z -> (-exp(-β * z)), 0.1).value
+    @test choquet_risk(x̃, cvar_capacity, 0.5).value ≈
+        choquet_risk(m̃, cvar_capacity, 0.5).value
+    @test choquet_distortion_risk(x̃, cvar_distortion, 0.5).value ≈
+        choquet_distortion_risk(m̃, cvar_distortion, 0.5).value
 end
+
 
 @testset "ERM" begin
     X = [2.0, 5.0, 6.0, 9.0, 3.0, 1.0]
@@ -336,21 +379,26 @@ end
     @test_throws ErrorException expectile(x̃, -1.0)
     @test_throws ErrorException expectile(x̃, 1.0)
     @test_throws ErrorException expectile(x̃, 0.0)
-    # Test monotonocity and subaddativity
+    # Test monotonicity and sub/super-additivity
+    X = rand(Float64, length(X))
     Y = rand(Float64, length(X))
     Z = rand(Float64, length(X))
-    for i ∈ eachindex(X)
+    for i ∈ eachindex(X) # make sure that Y ≥ X
         Y[i] < X[i] && (Y[i] = X[i])
     end
+    x̃ = DiscreteNonParametric(X, p)
     ỹ = DiscreteNonParametric(Y, p)
     z̃ = DiscreteNonParametric(Z, p)
     σ̃ = DiscreteNonParametric(X + Z, p)
     for α ∈ 0.1:0.01:0.9
-        @test compute_expectile(x̃, α).value ≥ compute_expectile(ỹ, α).value
+        # check monotonicity
+        @test compute_expectile(ỹ, α).value ≥ compute_expectile(x̃, α).value
         if α <= 0.5
+            # check sub-additivity
             @test compute_expectile(σ̃, α).value + 1e-10 ≥
                 compute_expectile(x̃, α).value + compute_expectile(z̃, α).value
         else
+            # check super-additivity
             @test compute_expectile(σ̃, α).value - 1e-10 ≤
                 compute_expectile(x̃, α).value + compute_expectile(z̃, α).value
         end
@@ -378,7 +426,7 @@ end
 @testset "UBSR Test" begin
     function test_UBSR(x, p)
       u = (z) -> z
-      v = compute_UBSR(x, p, u, 0)
+      v = UBSR(x, p, u, 0)
       @test v.value ≈ sum(x .* p) atol=1e-5
       dnp = DiscreteNonParametric(x, p)
       v2 = UBSR(dnp, u, 0)
@@ -386,17 +434,17 @@ end
       # Special cases
       # ERM
       β = 0.5
-      u = (z) -> (-exp(-β * z))
-      v = compute_UBSR(x, p, u, -1)
+      u = z -> (-exp(-β * z))
+      v = UBSR(x, p, u, 1)
       @test v.value ≈ ERM(x, p, β) atol=1e-5
       # VaR
-      α = 0.9
-      u = (z) -> (z ≥ 0 ? 1 : 0)
-      v = compute_UBSR(x, p, u, α)
-      @test v.value ≈ compute_VaR(x, p, 1-α).value atol=1e-5
+      α = 0.9001
+      u = (z) -> (z > 0 ? 0 : -1)
+      v = UBSR(x, p, u, α)
+      @test v.value ≈ compute_VaR(x, p, α).value atol=1e-5
       # Expectile
       u = (z) -> (α * max(z, 0) - (1-α) * max(-z, 0))
-      v = compute_UBSR(x, p, u, 0)
+      v = UBSR(x, p, u, 0)
       @test v.value ≈ compute_expectile(dnp, α).value atol=1e-5
     end
     x = [1.0, 2.0, 3.0]
@@ -411,6 +459,20 @@ end
     p .= p ./ sum(p)
     test_UBSR(x, p)
 end
+
+@testset "Choquet risk capacity" begin
+    x = [1,3,-5,3]
+    p = [0.3,0.2,0.3,0.2]
+    α = 0.4
+
+    ρ(x, p, α) = CVaR(x, p, α).value
+    v1 = choquet_risk(x, p, RiskMeasures.closure_c(ρ), α)
+    v2 = CVaR(x, p, α)
+
+    @test v1.value ≈ v2.value
+    @test v1.pmf ≈ v2.pmf
+end
+
 
 @testset "Check type stability" begin
     @test_throws DispatchDoctor.TypeInstabilityError RiskMeasures.test_stability(1)

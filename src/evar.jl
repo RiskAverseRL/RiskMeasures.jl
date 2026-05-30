@@ -38,6 +38,13 @@ infimum, because the supremum is attained in the limit as `β → ∞`.
 See:
 Ahmadi-Javid, A. “Entropic Value-at-Risk: A New Coherent Risk Measure.” Journal of
 Optimization Theory and Applications 155(3), 2012.
+
+# Examples
+
+```jldoctest
+julia> round(EVaR([1, 2, 3, 4, 5], [0.2, 0.2, 0.2, 0.2, 0.2], 0.4).value; digits=4)
+1.2942
+```
 """
 function EVaR end
 

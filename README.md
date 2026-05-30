@@ -37,7 +37,10 @@ CVaR(x, p, 0.1)  # conditional value at risk
 EVaR(x, p, 0.1)  # entropic value at risk
 ERM(x, p, 0.1)   # entropic risk measure
 expectile(x, p, 0.1)   # expectile risk measure
-UBSR(x, p, 0.1)   # utility-based shortfall risk measure with utility function u
+UBSR(x, p, z -> (z ≥ 0 ? 0 : -1), 0.1)  # utility-based shortfall risk that equals to VaR
+β = 0.1; UBSR(x, p, z -> (-exp(-β * z)), 0.1)  # utility-based shortfall risk that equals to ERM
+choquet_risk(x, p, cvar_capacity, 0.5) # choquet risk measure
+choquet_distortion_risk(x, p, cvar_distortion, 0.5) # law-invariant choquet (distortion) risk measure
 ```
 
 ### Using random variables
@@ -46,14 +49,19 @@ UBSR(x, p, 0.1)   # utility-based shortfall risk measure with utility function u
 using RiskMeasures
 using Distributions
 
-x̃ = DiscreteNonParametric([1, 5, 6, 7, 20], [0.1, 0.1, 0.2, 0.5, 0.1])
+X = [1, 5, 6, 7, 20]
+P = [0.1, 0.1, 0.2, 0.5, 0.1]
+x̃ = DiscreteNonParametric(X, P)
 
 VaR(x̃, 0.1)   # value at risk
 CVaR(x̃, 0.1)  # conditional value at risk
 EVaR(x̃, 0.1)  # entropic value at risk
 ERM(x̃, 0.1)   # entropic risk measure
 expectile(x̃, 0.1)   # expectile risk measure
-UBSR(x̃, u, 0.1)  # utility-based shortfall risk measure with utility function u 
+UBSR(x̃, z -> (z ≥ 0 ? 0 : -1), 0.1)  # utility-based shortfall risk that equals to VaR
+β = 0.1; UBSR(x̃, z -> (-exp(-β * z)), 0.1)  # utility-based shortfall risk that equals to ERM
+choquet_risk(x̃, cvar_capacity, 0.5) # choquet risk measure
+choquet_distortion_risk(x̃, cvar_distortion, 0.5) # law-invariant choquet (distortion) risk measure
 ```
 
 ### Using transformed random variables
@@ -61,11 +69,30 @@ UBSR(x̃, u, 0.1)  # utility-based shortfall risk measure with utility function 
 We can also compute risk measures of transformed random variables
 
 ```Julia
+using RiskMeasures
+using Distributions
+
+x̃ = DiscreteNonParametric([1, 5, 6, 7, 20], [0.1, 0.1, 0.2, 0.5, 0.1])
 VaR(5*x̃ + 10, 0.1)   # value at risk
 CVaR(x̃ - 10, 0.1)    # conditional value at risk
 ```
 
+### Using mixture models
+
+```Julia
+using RiskMeasures
+using Distributions
+
+x̃ = DiscreteNonParametric([-5, -3, 2, 7, 33], [0., 0.2, 0.1, 0.5, 0.2])
+ỹ = DiscreteNonParametric([1, 5, 6, 7, 20], [0.1, 0.1, 0.2, 0.5, 0.1])
+m̃ = MixtureModel([x̃, ỹ], [0.3, 0.7])
+
+VaR(m̃, 0.4)
+CVaR(m̃, 0.4)
+```
+
 Please see the unit tests for examples of how this package can be used to compute the risk. 
+
 
 ## Future development plans:
 

@@ -11,6 +11,13 @@ function essinf end
 
 Compute the essential infimum for a discrete random variable with `values` and
 the probability mass function `pmf`.
+
+# Examples
+
+```jldoctest
+julia> essinf([1.0, 2.0, 3.0], [0.0, 0.5, 0.5])
+(value = 2.0, index = 2)
+```
 """
 function essinf(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real};
                 check_inputs = true) 

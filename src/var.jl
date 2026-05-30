@@ -7,7 +7,9 @@ Risk must satisfy ``α ∈ [0,1]`` and `α=0.5` computes the median and `α=0` c
 essential infimum (smallest value with positive probability) and `α=1` returns infinity.
 
 Solves for
-``\\max \\{t ∈ \\mathbb{R} : \\mathbb{P}[x̃ < t] \\le α \\}``
+```math
+\\max \\{t ∈ \\mathbb{R} : \\mathbb{P}[x̃ < t] \\le α \\}
+```
 
 In general, this function is neither convex nor concave in the random variable x̃.
 """
@@ -33,6 +35,13 @@ an index does not exist, when `α = 1`, then returns `index = -1`.
 
 - `check_inputs=true`: check that the inputs are valid.
 - `fast=true`: use linear-time experimental implementation
+
+# Examples
+
+```jldoctest
+julia> VaR([1, 2, 3, 4, 5], [0.2, 0.2, 0.2, 0.2, 0.2], 0.5)
+(value = 3.0, index = 3)
+```
 """
 function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
     check_inputs=true, fast = true)
@@ -58,7 +67,7 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
         end
         return (value = float(values[pos])::T, index = pos)
     else
-        qv = qql!(copy(values), copy(pmf), α)
+        qv = qql!(Vector(values), Vector(pmf), α)
         return (value = float(qv.value),
                 index = something(findfirst(==(qv.value), values), -1))
     end
