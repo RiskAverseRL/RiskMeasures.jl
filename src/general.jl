@@ -1,4 +1,4 @@
-using Distributions: DiscreteNonParametric, DiscreteAffineDistribution, MixtureModel
+using Distributions: DiscreteNonParametric, DiscreteAffineDistribution, MixtureModel, support
 
 _bad_risk(msg::AbstractString) =
     error(msg)
@@ -43,8 +43,12 @@ function rv2pmf(x̃::DiscreteAffineDistribution)
     (sp, pmf)
 end
 
+# overload the standard implementation which is broken!
+mixsupport(m̃::MixtureModel) =
+    union((Set(support(c)) for c ∈ components(m̃))...) |> collect
+
 function rv2pmf(x̃::MixtureModel)
-    sp = support(x̃)
+    sp = mixsupport(x̃)  # overloaded; see above
     (sp, pdf.(x̃, sp))
 end
 

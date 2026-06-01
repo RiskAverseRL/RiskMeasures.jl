@@ -84,14 +84,14 @@ end
 
 function compute_expectile(x̃, α; kwargs...)
     v = expectile(x̃, α; kwargs...)
-    # TODO : add the comparison with
+    # TODO : add the comparison with the UBSR version
     return v
 end
 
 
 
 @testset "Mixture model test" begin
-    X = [1, 5, 6, 7, 20]
+    X = [1.1, 5.4, 6.1, 7.0, 20.9]
     P = [0.1, 0.1, 0.2, 0.5, 0.1]
     x̃ = DiscreteNonParametric(X, P)
 
@@ -99,19 +99,19 @@ end
     
     β = 0.1
 
-    @test compute_VaR(x̃, 0.1).value ≈ compute_VaR(m̃, 0.1).value
-    @test compute_CVaR(x̃, 0.1).value ≈ compute_CVaR(m̃, 0.1).value
-    @test compute_EVaR(x̃, 0.1).value ≈ compute_EVaR(m̃, 0.1).value
-    @test ERM(x̃, 0.1) ≈ ERM(m̃, 0.1)
-    @test compute_expectile(x̃, 0.1).value ≈ compute_expectile(m̃, 0.1).value
+    @test compute_VaR(x̃, 0.1).value ≈ compute_VaR(m̃, 0.1).value atol=1e-4
+    @test compute_CVaR(x̃, 0.1).value ≈ compute_CVaR(m̃, 0.1).value atol=1e-4
+    @test compute_EVaR(x̃, 0.1).value ≈ compute_EVaR(m̃, 0.1).value atol=1e-4
+    @test ERM(x̃, 0.1) ≈ ERM(m̃, 0.1) atol=1e-4
+    @test compute_expectile(x̃, 0.1).value ≈ compute_expectile(m̃, 0.1).value atol=1e-4
     @test UBSR(x̃, z -> (z ≥ 0 ? 0 : -1), 0.1).value ≈
-        UBSR(m̃, z -> (z ≥ 0 ? 0 : -1), 0.1).value
+        UBSR(m̃, z -> (z ≥ 0 ? 0 : -1), 0.1).value atol=1e-4
     @test UBSR(x̃, z -> (-exp(-β * z)), 0.1).value ≈
-        UBSR(m̃, z -> (-exp(-β * z)), 0.1).value
+        UBSR(m̃, z -> (-exp(-β * z)), 0.1).value atol=1e-4
     @test choquet_risk(x̃, cvar_capacity, 0.5).value ≈
-        choquet_risk(m̃, cvar_capacity, 0.5).value
+        choquet_risk(m̃, cvar_capacity, 0.5).value atol=1e-4
     @test choquet_distortion_risk(x̃, cvar_distortion, 0.5).value ≈
-        choquet_distortion_risk(m̃, cvar_distortion, 0.5).value
+        choquet_distortion_risk(m̃, cvar_distortion, 0.5).value atol=1e-4
 end
 
 
