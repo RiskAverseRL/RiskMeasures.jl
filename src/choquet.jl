@@ -184,3 +184,63 @@ function closure_c(ρ::Function)
         -ρ(-one_tilde, pmf, α)
     end
 end
+
+
+"""
+     choquet_ews(x, p, (m, c))
+
+Compute the risk measure for a random variable `x andan EWS function
+with parameters `p`, `m`, `c`. This algorithm can evaluate certain
+comotonic coherent risk measures in linear time.
+
+If linear time is not a concern, it is better to use a standard implementations,
+`choquet_risk` or `choquet_distortion_risk`.
+
+
+"""
+function choquet_ews(x::AbstractVector{<:Real}, p::AbstractVector{<:Real},
+                     ews::Tuple{<:Real,<:Real})
+    (m, c) = ews
+    if check_inputs
+        _check_pmf(x, p)
+        c ≥ zero(c) || error("Input violates c ≥ 0")
+        c + m ≥ one(m) || error("Input violates c + m ≥ 1")
+    end
+
+    T = float(eltype(vals))
+    v, _ = qql!(copy(x), copy(p), (1 - c) / m)
+    kmin :: Int = c > zero(c) ? findmin(vals)[2] : - 1
+    p[kmin] == zero(T) && error("The function requires that p[argmin x] > 0")
+
+    θ :: T = 1 - c - (@inbounds sum(p[i] for i ∈ eachindex(p,x) if x[i] < v))
+    q = zeros(T, length(p))
+    value :: T = zero(T)
+    @inbounds for i ∈ eachindex(p,x)
+        if i == kmin
+            q[i] = m * p[i] + c
+        elseif x[i] < v
+            q[i] = m * p[i]
+        elseif x[i] == v
+            q[i] = min(θ, m * p[i])
+            θ -= q[i]
+        end
+        value += q[i] * x[i]
+    end	
+    return (value=value, pmf = q)
+end
+
+function choquet_ews_cvar(α :: Real)
+    if α == zero(α)
+        (0.0, 1e20)
+    else
+        (0.0, Float64(1.0 / α)
+    end
+end
+
+function choquet_ews_tvar(α :: Real)
+    if α == zero(α)
+        (0.0, 1e20)
+    else
+        (0.0, Float64(1.0 / α)
+    end
+end

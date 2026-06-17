@@ -87,10 +87,10 @@ function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
 
     if !fast
         # Here on: α ∈ (0,1)
-        pc = zeros(T, length(pmf))  # this is the new distribution
-        value = zero(T)                  # CVaR value
-        p_left = one(T)           # probabilities left for allocation
-        α̂ = α                      # probabilities to allocate
+        pc = zeros(T, length(pmf))   # this is the new distribution
+        value = zero(T)              # CVaR value
+        p_left = one(T)              # probabilities left for allocation
+        α̂ = α                        # probabilities to allocate
 
         # Efficiency note: sorting by values is O(n*log n);
         # quickselect is O(n) and would suffice but would need be based on quantile
