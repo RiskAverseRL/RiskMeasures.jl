@@ -15,10 +15,10 @@ function qCVaR!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Rea
             pc[i]  = p[i] / α
             value += pc[i] * vals[i]
         else
-            increment  = min(p[i] / α, p_left)
-            pc[i]      = increment
-            value     += increment * vals[i]
-            p_left    -= increment
+            increment = min(p[i] / α, p_left)
+            pc[i] = increment
+            value += increment * vals[i]
+            p_left -= increment
         end
     end
     return (value=value, pmf=pc)
@@ -57,7 +57,7 @@ A named tuple with CVaR `value` and the `pmf` that achieves it.
 - `check_inputs=true`: check that the inputs are valid.
 - `fast=false`: use linear-time experimental implementation 
 
-More details: <https://en.wikipedia.org/wiki/Expected_shortfall>
+More details: https://en.wikipedia.org/wiki/Expected_shortfall
 
 # Examples
 

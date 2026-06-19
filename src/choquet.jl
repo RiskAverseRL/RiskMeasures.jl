@@ -25,6 +25,10 @@ level `α ∈ [0,1]`.
 The runtime of this function can be quadratic depending on the evaluation of the
 capacity function.
 
+# Returns
+
+A named tuple with risk `value` and the `pmf` that achieves it.
+
 # Examples
 
 ```jldoctest
@@ -118,8 +122,13 @@ The choquet distortion risk measure solves
    q \\in \\Delta_n, q(\\mathcal{U}) \\le g(p(\\mathcal{U}), \\alpha), \\forall \\mathcal{U} \\}
 ```
 
-More efficient than `choquet_risk` for law-invariant measures: `g` is evaluated
+This function is more efficient than `choquet_risk` for law-invariant measures: `g` is evaluated
 on scalars rather than index sets, and cumulative probabilities are computed once.
+
+
+# Returns
+
+A named tuple with risk `value` and the `pmf` that achieves it.
 
 # Examples
 
@@ -165,6 +174,10 @@ Given a risk function `ρ(values, pmf, α) -> Real`, return a closure that compu
 function `c(S, pmf, α) = -ρ(-1_S, pmf, α)` where `1_S` is the indicator vector of an index set `S`.
 When `ρ` is coherent and comonotonic, then `choquet_risk` recovers the same risk.
 
+# Returns
+
+A set function that can be used with `choquet_risk`
+
 # Examples
 
 ```jldoctest
@@ -172,7 +185,7 @@ julia> ρ(values, pmf, α) = CVaR(values, pmf, α).value;
 
 julia> c = closure_c(ρ);
 
-julia> choquet_risk([1, 2, 3, 4, 5], [0.2, 0.2, 0.2, 0.2, 0.2], c, 0.4).value
+julia> choquet_risk([5, 2, 3, 4, 1], [0.2, 0.2, 0.2, 0.2, 0.2], c, 0.4).value
 1.5
 ```
 """
@@ -187,33 +200,59 @@ end
 
 
 """
-     choquet_ews(x, p, (m, c))
+     choquet_ews(x, p, (m, c); [check_inputs = true])
 
-Compute the risk measure for a random variable `x andan EWS function
+Compute the risk measure for a random variable `x and an EWS function
 with parameters `p`, `m`, `c`. This algorithm can evaluate certain
 comotonic coherent risk measures in linear time.
 
-If linear time is not a concern, it is better to use a standard implementations,
-`choquet_risk` or `choquet_distortion_risk`.
+If linear time computation is not a concern, it is better to use a standard
+implementations such as `choquet_risk` or `choquet_distortion_risk`.
 
+# Returns
 
+A named tuple with risk `value` and the `pmf` that achieves it.
+
+# See Also
+
+See `choquet_ews_cvar` and `choquet_ews_tvar` for examples of ews functions
+
+# Examples
+
+```jldoctest
+julia> choquet_ews([1,2,3,4,5],[0.2,0.2,0.2,0.2,0.2], choquet_ews_cvar(0.4)).valuey
+1.5
+```
+
+```jldoctest
+julia> round(choquet_ews([1,2,3,4,5],[0.2,0.2,0.2,0.2,0.2], choquet_ews_tvar(0.4)).value,digits=4)
+1.1231
+```
 """
 function choquet_ews(x::AbstractVector{<:Real}, p::AbstractVector{<:Real},
-                     ews::Tuple{<:Real,<:Real})
+                     ews::Tuple{<:Real,<:Real}; check_inputs = true)
     (m, c) = ews
     if check_inputs
         _check_pmf(x, p)
-        c ≥ zero(c) || error("Input violates c ≥ 0")
+        zero(c) ≤ c ≤ one(c) || error("Input violates c ≥ 0")
+        zero(m) < m  || error("Input violates m > 0")
         c + m ≥ one(m) || error("Input violates c + m ≥ 1")
     end
 
-    T = float(eltype(vals))
-    v, _ = qql!(copy(x), copy(p), (1 - c) / m)
-    kmin :: Int = c > zero(c) ? findmin(vals)[2] : - 1
-    p[kmin] == zero(T) && error("The function requires that p[argmin x] > 0")
+    T = float(eltype(x))
+    α = (1 - c) / m
+    v :: T = α < one(α) ? qql!(copy(x), copy(p), α)[1] : typemax(T)
+    kmin :: Int = findmin(x)[2]
+    zero(T) < p[kmin] || error("The function requires that p[argmin x] > 0")
 
-    θ :: T = 1 - c - (@inbounds sum(p[i] for i ∈ eachindex(p,x) if x[i] < v))
     q = zeros(T, length(p))
+    if x[kmin] ≈ v
+        q[kmin] = one(T)
+        return (value=v::T, pmf=q)
+    end
+
+    sumlt = @inbounds sum(p[i] for i ∈ eachindex(p,x) if x[i] < v || i == kmin, init=zero(T))
+    θ :: T = 1 - min(c + m*sumlt, 1)
     value :: T = zero(T)
     @inbounds for i ∈ eachindex(p,x)
         if i == kmin
@@ -231,16 +270,16 @@ end
 
 function choquet_ews_cvar(α :: Real)
     if α == zero(α)
-        (0.0, 1e20)
+        (0.0, 1.0) 
     else
-        (0.0, Float64(1.0 / α)
+        (Float64(1.0 / α), 0.0) # m, c
     end
 end
 
 function choquet_ews_tvar(α :: Real)
     if α == zero(α)
-        (0.0, 1e20)
+        (0.0, 1.0) 
     else
-        (0.0, Float64(1.0 / α)
+        (1.0, min(1, sqrt(0.5 * log(1/Float64(α))))) # m, c
     end
 end
