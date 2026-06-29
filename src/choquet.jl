@@ -220,7 +220,7 @@ See `choquet_ews_cvar` and `choquet_ews_tvar` for examples of ews functions
 # Examples
 
 ```jldoctest
-julia> choquet_ews([1,2,3,4,5],[0.2,0.2,0.2,0.2,0.2], choquet_ews_cvar(0.4)).valuey
+julia> choquet_ews([1,2,3,4,5],[0.2,0.2,0.2,0.2,0.2], choquet_ews_cvar(0.4)).value
 1.5
 ```
 
@@ -246,10 +246,6 @@ function choquet_ews(x::AbstractVector{<:Real}, p::AbstractVector{<:Real},
     zero(T) < p[kmin] || error("The function requires that p[argmin x] > 0")
 
     q = zeros(T, length(p))
-    if x[kmin] ≈ v
-        q[kmin] = one(T)
-        return (value=v::T, pmf=q)
-    end
 
     sumlt = @inbounds sum(p[i] for i ∈ eachindex(p,x) if x[i] < v || i == kmin, init=zero(T))
     θ :: T = 1 - min(c + m*sumlt, 1)
@@ -270,7 +266,7 @@ end
 
 function choquet_ews_cvar(α :: Real)
     if α == zero(α)
-        (0.0, 1.0) 
+        (1.0, 1.0) 
     else
         (Float64(1.0 / α), 0.0) # m, c
     end
@@ -278,7 +274,7 @@ end
 
 function choquet_ews_tvar(α :: Real)
     if α == zero(α)
-        (0.0, 1.0) 
+        (1.0, 1.0) 
     else
         (1.0, min(1, sqrt(0.5 * log(1/Float64(α))))) # m, c
     end
