@@ -242,9 +242,11 @@ function choquet_ews(x::AbstractVector{<:Real}, p::AbstractVector{<:Real},
     T = float(eltype(x))
     α = (1 - c) / m
     v :: T = α < one(α) ? qql!(copy(x), copy(p), α)[1] : typemax(T)
-    kmin :: Int = findmin(x)[2]
-    zero(T) < p[kmin] || error("The function requires that p[argmin x] > 0")
 
+
+    # the function needs to find the index of the minimum supported element. 
+    kmin :: Int = essinf(x, p, check_inputs = false).index
+    
     q = zeros(T, length(p))
 
     sumlt = @inbounds sum(p[i] for i ∈ eachindex(p,x) if x[i] < v || i == kmin, init=zero(T))
