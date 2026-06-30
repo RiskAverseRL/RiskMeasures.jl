@@ -243,7 +243,6 @@ function choquet_ews(x::AbstractVector{<:Real}, p::AbstractVector{<:Real},
     α = (1 - c) / m
     v :: T = α < one(α) ? qql!(copy(x), copy(p), α)[1] : typemax(T)
 
-
     # the function needs to find the index of the minimum supported element. 
     kmin :: Int = essinf(x, p, check_inputs = false).index
     
