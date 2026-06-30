@@ -15,10 +15,10 @@ function qCVaR!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Rea
             pc[i]  = p[i] / α
             value += pc[i] * vals[i]
         else
-            increment  = min(p[i] / α, p_left)
-            pc[i]      = increment
-            value     += increment * vals[i]
-            p_left    -= increment
+            increment = min(p[i] / α, p_left)
+            pc[i] = increment
+            value += increment * vals[i]
+            p_left -= increment
         end
     end
     return (value=value, pmf=pc)
@@ -57,7 +57,7 @@ A named tuple with CVaR `value` and the `pmf` that achieves it.
 - `check_inputs=true`: check that the inputs are valid.
 - `fast=false`: use linear-time experimental implementation 
 
-More details: <https://en.wikipedia.org/wiki/Expected_shortfall>
+More details: https://en.wikipedia.org/wiki/Expected_shortfall
 
 # Examples
 
@@ -87,10 +87,10 @@ function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
 
     if !fast
         # Here on: α ∈ (0,1)
-        pc = zeros(T, length(pmf))  # this is the new distribution
-        value = zero(T)                  # CVaR value
-        p_left = one(T)           # probabilities left for allocation
-        α̂ = α                      # probabilities to allocate
+        pc = zeros(T, length(pmf))   # this is the new distribution
+        value = zero(T)              # CVaR value
+        p_left = one(T)              # probabilities left for allocation
+        α̂ = α                        # probabilities to allocate
 
         # Efficiency note: sorting by values is O(n*log n);
         # quickselect is O(n) and would suffice but would need be based on quantile

@@ -166,6 +166,12 @@ cvar_distortion
 closure_c
 ```
 
+## Linear-time Choquet Risk
+
+```@docs
+choquet_ews
+```
+
 ## UBSR
 
 ```@docs

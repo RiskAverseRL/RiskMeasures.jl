@@ -98,14 +98,14 @@ end
 Compute VaR in expected linear time without performing correctness checks. The runtime
 of the algorithm is randomized but the output value is deterministic.
 
-The input must satisfy `0 < α < 1` and `p` and `vals` must have the same length.
+The input must satisfy `0 ≤ α < 1` and `p` and `vals` must have the same length.
 
 # Returns
 
 A named tuple with VaR `value` as a float and the `index` that achieves it.
 """
 function qql!(vals::Vector{<:Real}, p::Vector{<:Real}, α::Real)
-    0 < α < 1 || _bad_risk("Violated: 0 < α < 1")
+    0 ≤ α < 1 || _bad_risk("Violated: 0 < α < 1")
     length(p) == length(vals) ||
         _bad_distribution("Violated: length(p) == length(vals)")
     
