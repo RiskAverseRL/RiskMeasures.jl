@@ -16,7 +16,7 @@ using DispatchDoctor: @stable
     include("ubsr.jl")
 end
 
-export essinf, ERM, softmin, VaR, CVaR, EVaR, expectile, UBSR
+export essinf, ERM, softmin, VaR, CVaR, VaR!, CVaR!, EVaR, expectile, UBSR
 export choquet_risk, closure_c, cvar_capacity
 export choquet_distortion_risk, cvar_distortion, closure_c
 export choquet_ews, choquet_ews_cvar, choquet_ews_tvar
