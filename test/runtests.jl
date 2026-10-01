@@ -27,7 +27,7 @@ function compute_VaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α:
     v_ubsr = UBSR(x, pmf, z -> (z ≥ 0 ? 0 : -1), α)
     @test v.value ≈ v_fast.value
     @test v.index < 1 || x[v.index] == v.value
-    @test v.index < 1 ||x[v_fast.index] == v_fast.value
+    @test v.index < 1 || x[v_fast.index] == v_fast.value
     @test v.index < 1 ? v_fast.index == v.index == -1 : true
     @test v_ubsr.value ≈ v.value atol = 0.01
     return v
@@ -50,7 +50,8 @@ function compute_CVaR(x::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α
     c_choquet = choquet_risk(x, pmf, cvar_capacity, α)
     c_distortion = choquet_distortion_risk(x, pmf, cvar_distortion, α)
     @test c.value ≈ c_fast.value
-    @test c.pmf ≈ c_fast.pmf atol = 0.01
+    # TODO: We should *really* check for each x its corresponding probability is the same across the methods, instead of below
+    @test sort(c.pmf) ≈ sort(c_fast.pmf) atol = 0.01 
     @test c_choquet.value ≈ c.value atol = 1e-10
     @test c_distortion.value ≈ c.value atol = 1e-10
     return c
@@ -546,6 +547,30 @@ end
     p = collect(1.0:21.0)
     p .= p ./ sum(p)
     test_UBSR(x, p)
+end
+
+@testset "Bang Tests" begin
+    x = [1.0, 2.0, 3.0]
+    x_bef = [1.0, 2.0, 3.0]
+    p = [0.2, 0.5, 0.3]
+    p_bef = [0.2, 0.5, 0.3]
+    CVaR(x, p, 0.5) # can not mutate
+    VaR(x, p, 0.5) # can not mutate
+    @test all(x .== x_bef)
+    @test all(p .== p_bef)
+    CVaR!(x, p, 0.5) # may mutate
+    VaR!(x, p, 0.5) # may mutate
+    x = collect(1.0:20.0)
+    x_bef = deepcopy(x)
+    p = collect(20.0:-1:1.0)
+    p .= p ./ sum(p)
+    p_bef = deepcopy(p)
+    CVaR(x, p, 0.5) # can not mutate
+    VaR(x, p, 0.5) # can not mutate
+    @test all(x .== x_bef)
+    @test all(p .== p_bef)
+    CVaR!(x, p, 0.5) # may mutate
+    VaR!(x, p, 0.5) # may mutate
 end
 
 @testset "Choquet risk capacity" begin

@@ -105,6 +105,11 @@ Most risk measure functions return tuples that include additional statistics and
 
 ## Value at Risk
 
+
+```@docs
+VaR!
+```
+
 ```@docs
 VaR
 ```

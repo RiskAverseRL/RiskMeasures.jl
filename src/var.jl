@@ -43,7 +43,7 @@ julia> VaR([1, 2, 3, 4, 5], [0.2, 0.2, 0.2, 0.2, 0.2], 0.5)
 (value = 3.0, index = 3)
 ```
 """
-function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
+function VaR!(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
     check_inputs=true, fast = true)
 
     _check_α(α)
@@ -53,8 +53,7 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
     # special cases
     isone(α)  && return (value=typemax(T), index=-1)
     iszero(α) && return essinf(values, pmf; check_inputs=check_inputs)
-
-    if !fast
+    if !fast || issorted(values)
         sortedi = sortperm(values) # sort ascending order
         pos = first(sortedi) # this value is used when the loop does not break
         p_accum = zero(T)
@@ -67,17 +66,23 @@ function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Re
         end
         return (value = float(values[pos])::T, index = pos)
     else
-        qv = qql!(Vector(values), Vector(pmf), α)
+        qv = qql!(values, pmf, α)
         return (value = float(qv.value),
                 index = something(findfirst(==(qv.value), values), -1))
     end
 end
 
+function VaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
+    check_inputs=true, fast = true)
+    value, index = VaR!(deepcopy(values), deepcopy(pmf), α; check_inputs=check_inputs, fast=fast)
+    return (value = value, 
+            index=something(findfirst(==(value), values), -1))
+end
 
 function VaR(x̃, α::Real; kwargs...)
     supp, pmf = rv2pmf(x̃)
 
-    v1 = VaR(supp, pmf, α; kwargs...)
+    v1 = VaR!(supp, pmf, α; kwargs...)
 
     # construct the equivalent distribution
     Tp = float(eltype(supp))

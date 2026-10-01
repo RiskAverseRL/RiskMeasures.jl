@@ -3,7 +3,7 @@ using Distributions
 # linear-time implementation of CVaR
 function qCVaR!(vals::AbstractVector{<:Real}, p::AbstractVector{<:Real}, α::Real)
     T = float(eltype(vals))
-    q, _ = qql!(Vector(vals), Vector(p), α)
+    q, _ = qql!(vals, p, α)
     p_left =  one(T) - (sum(p[i] for i in eachindex(p) if vals[i] < q; init=zero(T)) / α)
 
     pc = zeros(T, length(p))
@@ -68,7 +68,7 @@ julia> CVaR([1, 2, 3, 4, 5], [0.2, 0.2, 0.2, 0.2, 0.2], 0.4).value
 """
 function CVaR end
 
-function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
+function CVaR!(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
               check_inputs=true, fast=false)
     check_inputs && _check_α(α)
     check_inputs && _check_pmf(values, pmf)
@@ -85,7 +85,7 @@ function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
         return (value=T(minval.value), pmf=minpmf)
     end
 
-    if !fast
+    if !fast || issorted(values)
         # Here on: α ∈ (0,1)
         pc = zeros(T, length(pmf))   # this is the new distribution
         value = zero(T)              # CVaR value
@@ -106,13 +106,18 @@ function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::R
         end
         return (value=value, pmf=pc)
     else
-        qCVaR!(copy(values), copy(pmf), α)
+        qCVaR!(values, pmf, α)
     end
+end
+
+function CVaR(values::AbstractVector{<:Real}, pmf::AbstractVector{<:Real}, α::Real;
+              check_inputs=true, fast=false)
+    CVaR!(deepcopy(values), deepcopy(pmf), α; check_inputs=check_inputs, fast=fast)
 end
 
 function CVaR(x̃, α::Real; kwargs...)
     supp, pmf = rv2pmf(x̃)
-    v1 = CVaR(supp, pmf, α; kwargs...)
+    v1 = CVaR!(supp, pmf, α; kwargs...)
     ỹ = DiscreteNonParametric(supp, v1.pmf)
     (value=v1.value, pmf=ỹ)
 end
